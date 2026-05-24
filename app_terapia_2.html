@@ -1827,20 +1827,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     await cargarPacientesDesdeSupabase();
     
     // Si hay pacientes, mostrar el primero
-    if (pacientesGlobal.length > 0) {
-        pacienteActivoGlobal = pacientesGlobal[0];
-        cargarPacienteEnPantalla(pacienteActivoGlobal);
-    } else {
-        // Crear primer paciente vacío
-        const nuevoId = Date.now();
-        pacienteActivoGlobal = {
-            id: nuevoId,
-            nombre: '',
-            apellido: '',
-            // ... resto de campos vacíos
-        };
-        pacientesGlobal.push(pacienteActivoGlobal);
-    }
+   // Mostrar pantalla en BLANCO, sin cargar pacientes automáticamente
+pacienteActivoGlobal = null;
+limpiarPantalla();
+document.getElementById('nro-ficha').innerText = '---';
+
+// Solo actualizar la lista de pacientes (para que aparezcan en la búsqueda)
+actualizarListaPacientes();
     
     actualizarListaPacientes();
     
