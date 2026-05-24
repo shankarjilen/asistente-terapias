@@ -987,8 +987,8 @@ function limpiarPantalla() {
     document.getElementById('red-social').value = '';
     document.getElementById('telefono').value = '';
     document.getElementById('correo').value = '';
-    document.getElementById('nro-ficha').innerText = '';
-    document.getElementById('motivo-consulta').value = '';
+    document.getElementById('nro-ficha').innerText = '---';    
+	document.getElementById('motivo-consulta').value = '';
     document.getElementById('antecedentes').value = '';
     document.getElementById('evolucion').value = '';
     
@@ -1360,9 +1360,10 @@ function generarPDFCompleto() {
 // ==================== LÓGICA DE CONTROL DE FICHAS ====================
 
 function nuevaFicha() {
-    // Generar nuevo ID único
+    // Generar ID único usando timestamp
     const nuevoId = Date.now();
     
+    // Crear objeto paciente vacío
     const nuevoPaciente = {
         id: nuevoId,
         nroFicha: nuevoId.toString(),
@@ -1378,15 +1379,14 @@ function nuevaFicha() {
         antecedentes: '',
         evolucion: '',
         consentimientoDado: false,
-        consentimientoFecha: null,
-        historial: {}
+        consentimientoFecha: null
     };
     
     // Agregar a la lista global
     pacientesGlobal.push(nuevoPaciente);
     pacienteActivoGlobal = nuevoPaciente;
     
-    // Limpiar y cargar la nueva ficha en pantalla
+    // Limpiar pantalla y cargar la nueva ficha
     limpiarPantalla();
     cargarPacienteEnPantalla(nuevoPaciente);
     actualizarListaPacientes();
@@ -1394,6 +1394,9 @@ function nuevaFicha() {
     
     // Mostrar el número de ficha
     document.getElementById('nro-ficha').innerText = nuevoId;
+    
+    // Opcional: enfocar el campo nombre
+    document.getElementById('nombre-paciente').focus();
 }
 
 // ==================== GUARDAR CONSULTA (Estructura Corregida) ====================
