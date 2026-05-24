@@ -1009,7 +1009,8 @@ function limpiarPantalla() {
 
 function cargarPacienteEnPantalla(paciente) {
     if (!paciente) return;
-    
+
+    document.getElementById('nro-ficha').innerText = paciente.nroFicha || paciente.id || '---';
     document.getElementById('nombre-paciente').value = paciente.nombre || '';
     document.getElementById('apellido-paciente').value = paciente.apellido || '';
     document.getElementById('edad-paciente').value = paciente.edad || '';
