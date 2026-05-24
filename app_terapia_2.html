@@ -1359,21 +1359,9 @@ function generarPDFCompleto() {
 
 // ==================== LÓGICA DE CONTROL DE FICHAS ====================
 
-function nuevaFichaAutomaticaAlInicio() {
-    // Si la última ficha guardada del sistema quedó vacía, la reutilizamos para no sumar números al vicio
-    const fichasExistentes = window.pacientes || [];
-    const ultimaFichaGuardada = fichasExistentes.find(p => p.id === window.ultimoIdFicha - 1);
-    
-    if (ultimaFichaGuardada && (!ultimaFichaGuardada.nombre || ultimaFichaGuardada.nombre.trim() === '')) {
-        window.pacienteActivoId = ultimaFichaGuardada.id;
-        db_guardar();
-        limpiarPantalla();
-        cargarPacienteEnPantalla(ultimaFichaGuardada);
-        return;
-    }
-
-    const nuevoId = window.ultimoIdFicha;
-    window.ultimoIdFicha++;
+function nuevaFicha() {
+    // Generar nuevo ID único
+    const nuevoId = Date.now();
     
     const nuevoPaciente = {
         id: nuevoId,
@@ -1388,59 +1376,24 @@ function nuevaFichaAutomaticaAlInicio() {
         correo: '',
         motivoConsulta: '',
         antecedentes: '',
+        evolucion: '',
         consentimientoDado: false,
         consentimientoFecha: null,
         historial: {}
     };
     
-    db_guardarPaciente(nuevoPaciente);
-    window.pacienteActivoId = nuevoId;
-    db_guardar();
+    // Agregar a la lista global
+    pacientesGlobal.push(nuevoPaciente);
+    pacienteActivoGlobal = nuevoPaciente;
     
+    // Limpiar y cargar la nueva ficha en pantalla
     limpiarPantalla();
     cargarPacienteEnPantalla(nuevoPaciente);
     actualizarListaPacientes();
-}
-
-function nuevaFicha() {
-    const nombreCampoActual = document.getElementById('nombre-paciente');
-    
-    // Control Inteligente: Si ya hay una ficha en blanco con su número asignado, no avanza
-    if (nombreCampoActual && nombreCampoActual.value.trim() === '') {
-        const nroActual = document.getElementById('nro-ficha').innerText;
-        alert(`ℹ️ La Ficha N° ${nroActual} ya está en blanco en pantalla lista para completar.`);
-        nombreCampoActual.focus();
-        return;
-    }
-
-    const nuevoId = window.ultimoIdFicha;
-    window.ultimoIdFicha++;
-    
-    const nuevoPaciente = {
-        id: nuevoId,
-        nroFicha: nuevoId.toString(),
-        nombre: '',
-        apellido: '',
-        edad: '',
-        signo: '',
-        profesion: '',
-        redSocial: '',
-        telefono: '',
-        correo: '',
-        motivoConsulta: '',
-        antecedentes: '',
-        consentimientoDado: false,
-        consentimientoFecha: null,
-        historial: {}
-    };
-    
-    db_guardarPaciente(nuevoPaciente);
-    window.pacienteActivoId = nuevoId;
-    db_guardar();
-    
-    limpiarPantalla();
-    cargarPacienteEnPantalla(nuevoPaciente);
     ocultarListaPacientes();
+    
+    // Mostrar el número de ficha
+    document.getElementById('nro-ficha').innerText = nuevoId;
 }
 
 // ==================== GUARDAR CONSULTA (Estructura Corregida) ====================
