@@ -1138,12 +1138,7 @@ async function seleccionarPaciente(id) {
 
 let historialCompleto = {};
 
-function abrirHistorial() {
-    if (!window.pacienteActivoId) {
-        alert('⚠️ Primero seleccioná un paciente.');
-        return;
-    }
-    
+  
     const paciente = window.pacientes.find(p => p.id === window.pacienteActivoId);
     historialCompleto = paciente.historial || {};
     
@@ -1162,39 +1157,6 @@ function abrirHistorial() {
     }
     
     document.getElementById('panel-historial').style.display = 'flex';
-}
-
-function generarBloqueHistorial(fecha) {
-    const sesion = historialCompleto[fecha];
-    if (!sesion) return '';
-    
-    let html = `<div style="border-left: 3px solid #c4a27a; background: #fefcf8; margin-bottom: 15px; padding: 12px; border-radius: 12px;">`;
-    html += `<div style="font-weight: bold; font-size: 18px; color: #6b4c3a; margin-bottom: 12px;">📅 ${fecha}</div>`;
-    
-    if (sesion.sintomas) {
-        for (const [grupoId, data] of Object.entries(sesion.sintomas)) {
-            if (data.seleccionados && data.seleccionados.length > 0) {
-                let nombreGrupo = grupoId.replace(/modulo[0-9]_grupo_/, '');
-                html += `<div style="margin-bottom: 8px; font-size: 13px;">
-                            <span style="font-weight: 600; color: #8b7355;">${nombreGrupo}:</span>
-                            <span style="color: #4a3a2a;"> ${data.seleccionados.join(', ')}</span>`;
-                if (data.ubicacion) {
-                    html += `<br><span style="font-size: 11px; color: #c4a27a;">📍 ${data.ubicacion}</span>`;
-                }
-                html += `</div>`;
-            }
-        }
-    }
-    
-    if (sesion.evolucion) {
-        html += `<div style="margin-top: 12px; padding-top: 10px; border-top: 2px solid #e8dccc;">
-                    <div style="font-weight: bold; font-size: 12px; color: #7eb09e;">📝 Evolución</div>
-                    <div style="font-size: 13px; color: #4a3a2a;">${sesion.evolucion}</div>
-                 </div>`;
-    }
-    
-    html += `</div>`;
-    return html;
 }
 
 // ==================== PDF COMPLETO (Sincronizado y Dinámico) ====================
@@ -1563,7 +1525,7 @@ function ajustarNombreCentro() {
     const nuevoNombre = prompt("Ingresá el nombre de tu centro:", nombreActual);
     if (nuevoNombre && nuevoNombre.trim() !== "") {
         document.getElementById('nombre-centro-txt').innerText = nuevoNombre.trim().toUpperCase();
-        db_guardar();
+        // Ya no hay db_guardar, el nombre se guarda solo en la pantalla
     }
 }
 
@@ -1780,18 +1742,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     generarModulos();
     mostrarFechaActual();
     
-    // Cargar pacientes desde Supabase
     await cargarPacientesDesdeSupabase();
     
-    // Si hay pacientes, mostrar el primero
-   // Mostrar pantalla en BLANCO, sin cargar pacientes automáticamente
-pacienteActivoGlobal = null;
-limpiarPantalla();
-document.getElementById('nro-ficha').innerText = '---';
-
-// Solo actualizar la lista de pacientes (para que aparezcan en la búsqueda)
-actualizarListaPacientes();
+    // Pantalla en blanco
+    pacienteActivoGlobal = null;
+    limpiarPantalla();
     
+    // Solo actualizar la lista de pacientes (para que aparezcan en la búsqueda)
     actualizarListaPacientes();
     
     // Configurar buscador
