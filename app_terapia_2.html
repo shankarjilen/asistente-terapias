@@ -906,66 +906,74 @@ const miClienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_AN
 
 console.log('✅ Supabase inicializado:', miClienteSupabase);
 
-// ==================== CAPA DE DATOS (preparada para web/local) ====================
+// ==================== CAPA DE DATOS SOLO SUPABASE ====================
 
-function db_guardar() {
-    const datos = {
-        config: {
-            nombreCentro: document.getElementById('nombre-centro-txt').innerText,
-            ultimoIdFicha: window.ultimoIdFicha || 1
-        },
-        pacientes: window.pacientes || [],
-        pacienteActivoId: window.pacienteActivoId || null
-    };
-    localStorage.setItem('db_terapias', JSON.stringify(datos));
-}
+let pacientesGlobal = [];      // Cache en memoria (no localStorage)
+let pacienteActivoGlobal = null;
 
-function db_cargar() {
-    const guardado = localStorage.getItem('db_terapias');
-    if (!guardado) {
-        window.pacientes = [];
-        window.pacienteActivoId = null;
-        window.ultimoIdFicha = 1;
-        db_guardar();
-        return;
+async function cargarPacientesDesdeSupabase() {
+    const { data, error } = await miClienteSupabase
+        .from('pacientes')
+        .select('*')
+        .order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error('Error cargando pacientes:', error);
+        return [];
     }
     
-    try {
-        const datos = JSON.parse(guardado);
-        window.pacientes = datos.pacientes || [];
-        window.pacienteActivoId = datos.pacienteActivoId || null;
-        window.ultimoIdFicha = datos.config?.ultimoIdFicha || 1;
-        
-        if (datos.config?.nombreCentro) {
-            document.getElementById('nombre-centro-txt').innerText = datos.config.nombreCentro;
+    pacientesGlobal = data || [];
+    return pacientesGlobal;
+}
+
+async function guardarPacienteEnSupabase(paciente) {
+    const { data, error } = await miClienteSupabase
+        .from('pacientes')
+        .upsert([paciente], { onConflict: 'id' });
+    
+    if (error) throw error;
+    return data;
+}
+
+async function eliminarPacienteDeSupabase(id) {
+    const { error } = await miClienteSupabase
+        .from('pacientes')
+        .delete()
+        .eq('id', id);
+    
+    if (error) throw error;
+}
+	
+async function eliminarPaciente(id) {
+    const paciente = pacientesGlobal.find(p => p.id === id);
+    if (!paciente) return;
+    if (confirm(`¿Eliminar permanentemente a "${paciente.nombre} ${paciente.apellido}"?`)) {
+        await eliminarPacienteDeSupabase(id);
+        pacientesGlobal = pacientesGlobal.filter(p => p.id !== id);
+        if (pacienteActivoGlobal?.id === id) {
+            pacienteActivoGlobal = pacientesGlobal[0] || null;
+            if (pacienteActivoGlobal) {
+                cargarPacienteEnPantalla(pacienteActivoGlobal);
+            } else {
+                limpiarPantalla();
+            }
         }
-    } catch(e) {
-        console.error('Error al cargar DB:', e);
-        window.pacientes = [];
-        window.pacienteActivoId = null;
-        window.ultimoIdFicha = 1;
-    }
-}
-
-function db_guardarPaciente(paciente) {
-    const index = window.pacientes.findIndex(p => p.id === paciente.id);
-    if (index !== -1) {
-        window.pacientes[index] = paciente;
-    } else {
-        window.pacientes.push(paciente);
-    }
-    db_guardar();
-}
-
-function db_eliminarPaciente(id) {
-    window.pacientes = window.pacientes.filter(p => p.id !== id);
-    if (window.pacienteActivoId === id) {
-        window.pacienteActivoId = null;
-        nuevaFichaAutomaticaAlInicio(); // Si se elimina el activo, creamos una limpia correlativa inmediatamente
-    } else {
-        db_guardar();
         actualizarListaPacientes();
     }
+}
+
+async function guardarSesionEnSupabase(pacienteId, fecha, sesionData) {
+    const { error } = await miClienteSupabase
+        .from('sesiones')
+        .insert([{
+            paciente_id: pacienteId,
+            fecha: fecha,
+            evolucion: sesionData.evolucion,
+            sintomas: sesionData.sintomas,
+            notas_modulos: sesionData.notasModulos
+        }]);
+    
+    if (error) console.error('Error guardando sesión:', error);
 }
 
 // ==================== FUNCIONES DE PANTALLA ====================
@@ -1083,15 +1091,14 @@ function actualizarListaPacientes(textoBusqueda = '') {
     const contenedor = document.getElementById('lista-pacientes-contenido');
     if (!contenedor) return;
     
-    // Filtrar para que solo aparezcan pacientes reales que posean nombre cargado
-    let pacientesFiltrados = window.pacientes.filter(p => p.nombre && p.nombre.trim() !== '');
+    let pacientesFiltrados = pacientesGlobal.filter(p => p.nombre && p.nombre.trim() !== '');
     
     if (textoBusqueda.trim() !== '') {
         const busqueda = textoBusqueda.toLowerCase();
         pacientesFiltrados = pacientesFiltrados.filter(p => 
             (p.nombre && p.nombre.toLowerCase().includes(busqueda)) ||
             (p.apellido && p.apellido.toLowerCase().includes(busqueda)) ||
-            (p.nroFicha && p.nroFicha.toString().includes(busqueda))
+            (p.id && p.id.toString().includes(busqueda))
         );
     }
     
@@ -1106,10 +1113,10 @@ function actualizarListaPacientes(textoBusqueda = '') {
     pacientesFiltrados.forEach(p => {
         html += `
             <div class="paciente-item" data-id="${p.id}">
-                <div class="paciente-info" onclick="seleccionarPaciente(${p.id})" style="display: flex; align-items: center; gap: 4px;">
-                    <span class="paciente-nombre">#${p.nroFicha || p.id} - ${p.nombre || ''} ${p.apellido || ''}</span>
+                <div class="paciente-info" onclick="seleccionarPaciente(${p.id})">
+                    <span class="paciente-nombre">#${p.id} - ${p.nombre || ''} ${p.apellido || ''}</span>
                 </div>
-                <button class="btn-eliminar-paciente" onclick="eliminarPaciente(${p.id})" title="Eliminar paciente" style="font-size: 16px;">🗑️</button>
+                <button class="btn-eliminar-paciente" onclick="eliminarPaciente(${p.id})">🗑️</button>
             </div>
         `;
     });
@@ -1117,11 +1124,10 @@ function actualizarListaPacientes(textoBusqueda = '') {
     contenedor.innerHTML = html;
 }
 
-function seleccionarPaciente(id) {
-    const paciente = window.pacientes.find(p => p.id === id);
+async function seleccionarPaciente(id) {
+    const paciente = pacientesGlobal.find(p => p.id === id);
     if (paciente) {
-        window.pacienteActivoId = id;
-        db_guardar();
+        pacienteActivoGlobal = paciente;
         cargarPacienteEnPantalla(paciente);
         ocultarListaPacientes();
     }
@@ -1440,7 +1446,7 @@ function nuevaFicha() {
 // ==================== GUARDAR CONSULTA (Estructura Corregida) ====================
 
 async function guardarConsulta() {
-    if (!window.pacienteActivoId) {
+    if (!pacienteActivoGlobal) {
         alert('⚠️ Primero creá o seleccioná un paciente.');
         return;
     }
@@ -1459,38 +1465,25 @@ async function guardarConsulta() {
         return;
     }
     
-    const paciente = window.pacientes.find(p => p.id === window.pacienteActivoId);
-    if (!paciente) return;
+    // Armar objeto paciente actualizado
+    const pacienteActualizado = {
+        id: pacienteActivoGlobal.id,
+        nombre: nombreCampo.value,
+        apellido: document.getElementById('apellido-paciente').value,
+        edad: document.getElementById('edad-paciente').value,
+        signo: document.getElementById('signo-paciente').value,
+        profesion: document.getElementById('profesion-paciente').value,
+        red_social: document.getElementById('red-social').value,
+        telefono: document.getElementById('telefono').value,
+        correo: document.getElementById('correo').value,
+        motivo: document.getElementById('motivo-consulta').value,
+        antecedentes: document.getElementById('antecedentes').value,
+        consentimiento_dado: true,
+        consentimiento_fecha: pacienteActivoGlobal.consentimiento_fecha || new Date().toLocaleDateString('es-ES')
+    };
     
-    paciente.nombre = nombreCampo.value;
-    paciente.apellido = document.getElementById('apellido-paciente').value;
-    paciente.edad = document.getElementById('edad-paciente').value;
-    paciente.signo = document.getElementById('signo-paciente').value;
-    paciente.profesion = document.getElementById('profesion-paciente').value;
-    paciente.redSocial = document.getElementById('red-social').value;
-    paciente.telefono = document.getElementById('telefono').value;
-    paciente.correo = document.getElementById('correo').value;
-    paciente.motivoConsulta = document.getElementById('motivo-consulta').value;
-    paciente.antecedentes = document.getElementById('antecedentes').value;
-    
-    if (chkLegal.checked && !paciente.consentimientoDado) {
-        paciente.consentimientoDado = true;
-        paciente.consentimientoFecha = new Date().toLocaleDateString('es-ES');
-        chkLegal.disabled = true;
-        if (!document.getElementById('fecha-consentimiento')) {
-            const fechaSpan = document.createElement('span');
-            fechaSpan.id = 'fecha-consentimiento';
-            fechaSpan.style.cssText = 'display: block; font-size: 11px; color: #7eb09e; margin-top: 5px;';
-            fechaSpan.innerHTML = `✅ Consentimiento aceptado el ${paciente.consentimientoFecha}`;
-            document.querySelector('.consentimiento-bloque').appendChild(fechaSpan);
-        }
-    }
-    
-    const fecha = document.getElementById('fecha-actual').innerText;
+    // Capturar síntomas actuales
     const sintomas = {};
-    const notasModulos = {};
-    
-    // Capturar botones e inputs de notas limpiamente por módulo
     document.querySelectorAll('.grupo-sintomas').forEach(grupo => {
         const grupoId = grupo.getAttribute('data-grupo-id');
         if (!grupoId) return;
@@ -1500,67 +1493,39 @@ async function guardarConsulta() {
             .map(btn => btn.innerText.trim());
         sintomas[grupoId] = { seleccionados };
     });
-
+    
+    // Capturar notas de módulos
+    const notasModulos = {};
     modulos.forEach(mod => {
         const txtArea = document.querySelector(`#ubicacion-${mod.id} textarea`);
         notasModulos[mod.id] = txtArea ? txtArea.value : '';
     });
     
+    const fecha = document.getElementById('fecha-actual').innerText;
     const evolucion = document.getElementById('evolucion').value;
     
-    if (!paciente.historial) paciente.historial = {};
-    paciente.historial[fecha] = {
-        evolucion: evolucion,
-        sintomas: sintomas,
-        notasModulos: notasModulos
-    };
-    
-    db_guardarPaciente(paciente);
-
-    // Guardar en Supabase (nube)
     try {
-        const { error } = await miClienteSupabase
-            .from('pacientes')
-            .insert([{
-                nombre: paciente.nombre,
-                apellido: paciente.apellido,
-                edad: paciente.edad,
-                signo: paciente.signo,
-                profesion: paciente.profesion,
-                red_social: paciente.redSocial,
-                telefono: paciente.telefono,
-                correo: paciente.correo,
-                motivo: paciente.motivoConsulta,
-                antecedentes: paciente.antecedentes,
-                evolucion: evolucion,
-                diagnosticos: sintomas,
-                notas_lengua: notasModulos.modulo1 || '',
-                notas_audicion: notasModulos.modulo2 || '',
-                notas_interrogatorio: notasModulos.modulo3 || '',
-                notas_palpacion: notasModulos.modulo4 || ''
-            }]);
+        // 1. Guardar/Actualizar paciente en Supabase
+        await guardarPacienteEnSupabase(pacienteActualizado);
         
-        if (error) {
-            console.error('Error Supabase:', error);
-        } else {
-            console.log('✅ Guardado en Supabase');
+        // 2. Guardar la sesión en tabla "sesiones"
+        await guardarSesionEnSupabase(pacienteActivoGlobal.id, fecha, {
+            evolucion: evolucion,
+            sintomas: sintomas,
+            notasModulos: notasModulos
+        });
+        
+        // 3. Actualizar cache global
+        const index = pacientesGlobal.findIndex(p => p.id === pacienteActivoGlobal.id);
+        if (index !== -1) {
+            pacientesGlobal[index] = { ...pacientesGlobal[index], ...pacienteActualizado };
         }
-    } catch(err) {
-        console.error('Error conexión Supabase:', err);
-    }
-
-    actualizarListaPacientes(); 
-
-
-
-    alert(`✅ Consulta guardada correctamente (${fecha})`);
-}
-
-function eliminarPaciente(id) {
-    const paciente = window.pacientes.find(p => p.id === id);
-    if (!paciente) return;
-    if (confirm(`¿Eliminar permanentemente a "${paciente.nombre} ${paciente.apellido}"?`)) {
-        db_eliminarPaciente(id);
+        
+        alert(`✅ Consulta guardada correctamente (${fecha})`);
+        
+    } catch (error) {
+        console.error('Error al guardar:', error);
+        alert('❌ Error al guardar en la nube. Revisá la conexión.');
     }
 }
 
@@ -1571,106 +1536,45 @@ function ocultarListaPacientes() {
 
 // ==================== VISUALIZACIÓN RÁPIDA DEL HISTORIAL (Relojito) ====================
 
-function verHistorial() {
-    if (!window.pacienteActivoId) {
+async function verHistorial() {
+    if (!pacienteActivoGlobal) {
         alert('⚠️ Primero seleccioná un paciente.');
         return;
     }
-
-    const paciente = window.pacientes.find(p => p.id === window.pacienteActivoId);
-    if (!paciente) return;
-
-    const contenedorContenido = document.getElementById('historial-sesiones-lista');
-    if (!contenedorContenido) return;
-
-    let htmlEvolucion = '';
-
-    // Convertir historial a arreglo y ordenar cronológicamente por fecha (DD/MM/AAAA)
-    const fechasOrdenadas = Object.keys(paciente.historial || {}).sort((a, b) => {
-        const [diaA, mesA, anioA] = a.split('/').map(Number);
-        const [diaB, mesB, anioB] = b.split('/').map(Number);
-        return new Date(anioA, mesA - 1, diaA) - new Date(anioB, mesB - 1, diaB);
-    });
-
-    if (fechasOrdenadas.length === 0) {
-        htmlEvolucion = '<div style="text-align: center; color: #8b7355; padding: 20px; font-style: italic;">No hay consultas guardadas para este paciente.</div>';
-    } else {
-        // Estructura idéntica al reporte PDF: Recorremos secuencialmente los 4 métodos de MTC
-        modulos.forEach(mod => {
-            const idMod = mod.id;
-            let htmlModContenido = '';
-            let htmlNotasContenido = '';
-            let tieneDatosMetodo = false;
-
-            fechasOrdenadas.forEach(fecha => {
-                const sesion = paciente.historial[fecha];
-                if (!sesion) return;
-
-                // 1. Verificar qué opciones fueron seleccionadas en esta fecha para este módulo
-                let lineasSintomasDeEstaFecha = '';
-                mod.grupos.forEach((grupo, gIdx) => {
-                    const grupoId = `${idMod}_grupo_${gIdx}`;
-                    if (sesion.sintomas && sesion.sintomas[grupoId] && sesion.sintomas[grupoId].seleccionados && sesion.sintomas[grupoId].seleccionados.length > 0) {
-                        lineasSintomasDeEstaFecha += `
-                            <div style="margin-left: 10px; margin-bottom: 4px; font-size: 13px; color: #4a3a2a;">
-                                <strong style="color: #8b7355;">${grupo.nombre}:</strong> ${sesion.sintomas[grupoId].seleccionados.join(', ')}
-                            </div>`;
-                    }
-                });
-
-                // Si hay datos en esta consulta, los agrupamos cronológicamente
-                if (lineasSintomasDeEstaFecha !== '') {
-                    tieneDatosMetodo = true;
-                    htmlModContenido += `
-                        <div style="font-weight: bold; font-size: 13px; color: #c4a27a; margin-top: 8px; margin-bottom: 4px;">
-                            📅 ${fecha}
-                        </div>`;
-                    htmlModContenido += lineasSintomasDeEstaFecha;
-                }
-
-                // 2. Extraer las notas del alfiler de este módulo para esta fecha
-                if (sesion.notasModulos && sesion.notasModulos[idMod] && sesion.notasModulos[idMod].trim() !== '') {
-                    tieneDatosMetodo = true;
-                    htmlNotasContenido += `
-                        <div style="margin-left: 10px; font-size: 12px; color: #6b4c3a; font-style: italic; margin-bottom: 4px;">
-                            <strong>${fecha}:</strong> ${sesion.notasModulos[idMod].trim()}
-                        </div>`;
-                }
-            });
-
-            // Si el método tiene registros o notas, creamos su tarjeta visual prolija
-            if (tieneDatosMetodo) {
-                htmlEvolucion += `
-                    <div style="margin-bottom: 15px; padding: 12px; border: 1px solid #e8dccc; border-radius: 12px; background: #ffffff;">
-                        <div style="font-size: 14px; font-weight: bold; color: #6b4c3a; border-bottom: 1px solid #c4a27a; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">
-                            ${mod.titulo}
-                        </div>`;
-
-                if (htmlModContenido !== '') {
-                    htmlEvolucion += htmlModContenido;
-                }
-
-                if (htmlNotasContenido !== '') {
-                    htmlEvolucion += `
-                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e8dccc;">
-                            <div style="font-size: 12px; font-weight: bold; color: #8b7355; margin-bottom: 2px;">Notas:</div>
-                            ${htmlNotasContenido}
-                        </div>`;
-                }
-
-                htmlEvolucion += `</div>`;
-            }
-        });
-        
-        if (htmlEvolucion === '') {
-            htmlEvolucion = '<div style="text-align: center; color: #8b7355; padding: 20px; font-style: italic;">El paciente tiene consultas guardadas, pero no se marcaron opciones en los métodos de diagnóstico todavía.</div>';
-        }
+    
+    const { data: sesiones, error } = await miClienteSupabase
+        .from('sesiones')
+        .select('*')
+        .eq('paciente_id', pacienteActivoGlobal.id)
+        .order('fecha', { ascending: false });
+    
+    if (error) {
+        console.error('Error cargando historial:', error);
+        alert('Error al cargar el historial');
+        return;
     }
-
-    // Inyectamos el diseño limpio en el panel flotante y lo abrimos
-    contenedorContenido.innerHTML = htmlEvolucion;
+    
+    const contenedor = document.getElementById('historial-sesiones-lista');
+    if (!contenedor) return;
+    
+    if (!sesiones || sesiones.length === 0) {
+        contenedor.innerHTML = '<div style="text-align: center; padding: 20px;">No hay sesiones guardadas</div>';
+    } else {
+        let html = '';
+        sesiones.forEach(sesion => {
+            html += `
+                <div style="border-left: 3px solid #c4a27a; background: #fefcf8; margin-bottom: 15px; padding: 12px; border-radius: 12px;">
+                    <div style="font-weight: bold; font-size: 18px; color: #6b4c3a; margin-bottom: 12px;">📅 ${sesion.fecha}</div>
+                    <div style="font-size: 13px; color: #4a3a2a;">${sesion.evolucion || 'Sin evolución registrada'}</div>
+                </div>
+            `;
+        });
+        contenedor.innerHTML = html;
+    }
+    
     document.getElementById('panel-historial').style.display = 'flex';
 }
+	
 
 function cerrarHistorial() {
     document.getElementById('panel-historial').style.display = 'none';
@@ -1915,11 +1819,32 @@ function toggleCampoUbicacion(idModulo) {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     generarModulos();
     mostrarFechaActual();
-    db_cargar();
     
+    // Cargar pacientes desde Supabase
+    await cargarPacientesDesdeSupabase();
+    
+    // Si hay pacientes, mostrar el primero
+    if (pacientesGlobal.length > 0) {
+        pacienteActivoGlobal = pacientesGlobal[0];
+        cargarPacienteEnPantalla(pacienteActivoGlobal);
+    } else {
+        // Crear primer paciente vacío
+        const nuevoId = Date.now();
+        pacienteActivoGlobal = {
+            id: nuevoId,
+            nombre: '',
+            apellido: '',
+            // ... resto de campos vacíos
+        };
+        pacientesGlobal.push(pacienteActivoGlobal);
+    }
+    
+    actualizarListaPacientes();
+    
+    // Configurar buscador
     const buscador = document.getElementById('buscador-input');
     const btnLupa = document.getElementById('btn-lupa');
     const panelLista = document.getElementById('panel-lista-pacientes');
@@ -1930,7 +1855,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 actualizarListaPacientes(buscador.value);
             }
         });
-        
         buscador.addEventListener('focus', () => {
             actualizarListaPacientes(buscador.value);
             panelLista.style.display = 'block';
@@ -1954,9 +1878,6 @@ window.addEventListener('DOMContentLoaded', () => {
             panelLista.style.display = 'none';
         }
     });
-    
-    // El sistema se inicializa de forma prolija, asegurándose de que haya una ficha correlativa numerada lista en pantalla
-    nuevaFichaAutomaticaAlInicio();
 });
 
 function abrirInstrucciones() {
