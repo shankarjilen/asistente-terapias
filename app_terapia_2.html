@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Asistente Clínico Holístico</title>
+    <title>Asistente Clínico Holístico - Supabase</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -441,7 +441,7 @@
             border-radius: 20px;
             padding: 20px;
             width: 90%;
-            max-width: 400px;
+            max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
             border-top: 4px solid #c4a27a;
@@ -692,13 +692,28 @@
     }
 }
 
-.buscador-container input:focus {
-    border-color: #c4a27a;
-    outline: none;
+.buscador-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    gap: 8px;
 }
 
+.buscador-container input {
+    flex: 1;
+}
+
+#btn-lupa {
+    background-color: #c4a27a;
+    border: none;
+    border-radius: 12px;
+    padding: 0 15px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
 #btn-lupa:hover {
-    color: #7eb09e;
+    background-color: #b08e66;
 }
 
 .paciente-item {
@@ -822,7 +837,7 @@
     </div>
 
     <div class="search-box">
-        <div class="buscador-container" style="flex: 1; position: relative;">
+        <div class="buscador-container">
             <input type="text" id="buscador-input" placeholder="Buscar paciente..." autocomplete="off">
             <button id="btn-lupa">🔍</button>
         </div>
@@ -871,7 +886,8 @@
 
     <div style="display: flex; justify-content: flex-start; align-items: center; gap: 20px; margin: 20px 0 15px 0;">
         <h2 style="color: #6b4c3a; font-size: 20px; font-weight: 700; margin: 0;">📋 Diagnóstico</h2>
-	<button class="historial-icono" onclick="verHistorial()" title="Ver Historial Clínico" style="font-size: 22px;">⏱️</button>    </div>
+        <button class="historial-icono" onclick="verHistorial()" title="Ver Historial Clínico" style="font-size: 22px;">⏱️</button>
+    </div>
 
     <div class="acordeon-contenedor" id="acordeones"></div>
 
@@ -898,85 +914,104 @@
 </div>
 
 <script>
-// ==================== 1. INICIALIZAR SUPABASE (PRIMERO) ====================
-
+// ==================== 1. SUPABASE ====================
 const SUPABASE_URL = 'https://ejdxiwledgsxglvhejba.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_7wf8GsvmiqWZ5271iQJJEQ_zPPf_OiK';
-const miClienteSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-console.log('✅ Supabase inicializado:', miClienteSupabase);
+// ==================== VARIABLES GLOBALES ====================
+let pacientesCache = [];
+let pacienteActivoId = null;
+let ultimoNroFicha = 1;
 
-// ==================== CAPA DE DATOS SOLO SUPABASE ====================
-
-let pacientesGlobal = [];      // Cache en memoria (no localStorage)
-let pacienteActivoGlobal = null;
-
-async function cargarPacientesDesdeSupabase() {
-    const { data, error } = await miClienteSupabase
-        .from('pacientes')
-        .select('*')
-        .order('created_at', { ascending: false });
-    
-    if (error) {
+// ==================== FUNCIONES SUPABASE ====================
+async function cargarPacientes() {
+    try {
+        const { data, error } = await supabase
+            .from('pacientes')
+            .select('*')
+            .order('nro_ficha', { ascending: true });
+        if (error) throw error;
+        pacientesCache = data || [];
+        ultimoNroFicha = pacientesCache.length > 0 
+            ? Math.max(...pacientesCache.map(p => p.nro_ficha || 0)) + 1 
+            : 1;
+        console.log(`✅ Pacientes cargados: ${pacientesCache.length}, próximo N°: ${ultimoNroFicha}`);
+        return pacientesCache;
+    } catch (error) {
         console.error('Error cargando pacientes:', error);
+        pacientesCache = [];
+        ultimoNroFicha = 1;
         return [];
     }
-    
-    pacientesGlobal = data || [];
-    return pacientesGlobal;
 }
 
-async function guardarPacienteEnSupabase(paciente) {
-    const { data, error } = await miClienteSupabase
-        .from('pacientes')
-        .upsert([paciente], { onConflict: 'id' });
-    
-    if (error) throw error;
-    return data;
-}
-
-async function eliminarPacienteDeSupabase(id) {
-    const { error } = await miClienteSupabase
-        .from('pacientes')
-        .delete()
-        .eq('id', id);
-    
-    if (error) throw error;
-}
-	
-async function eliminarPaciente(id) {
-    const paciente = pacientesGlobal.find(p => p.id === id);
-    if (!paciente) return;
-    if (confirm(`¿Eliminar permanentemente a "${paciente.nombre} ${paciente.apellido}"?`)) {
-        await eliminarPacienteDeSupabase(id);
-        pacientesGlobal = pacientesGlobal.filter(p => p.id !== id);
-        if (pacienteActivoGlobal?.id === id) {
-            pacienteActivoGlobal = pacientesGlobal[0] || null;
-            if (pacienteActivoGlobal) {
-                cargarPacienteEnPantalla(pacienteActivoGlobal);
-            } else {
-                limpiarPantalla();
-            }
-        }
-        actualizarListaPacientes();
+async function guardarPaciente(paciente) {
+    try {
+        const { data, error } = await supabase
+            .from('pacientes')
+            .upsert(paciente, { onConflict: 'id' })
+            .select();
+        if (error) throw error;
+        const index = pacientesCache.findIndex(p => p.id === data[0].id);
+        if (index !== -1) pacientesCache[index] = data[0];
+        else pacientesCache.push(data[0]);
+        return data[0];
+    } catch (error) {
+        console.error('Error guardando paciente:', error);
+        throw error;
     }
 }
 
-async function guardarSesionEnSupabase(pacienteId, fecha, sesionData) {
-    const { error } = await miClienteSupabase
-        .from('sesiones')
-        .insert([{
-            paciente_id: pacienteId,
-            fecha: fecha,
-            evolucion: sesionData.evolucion,
-            sintomas: sesionData.sintomas,
-            notas_modulos: sesionData.notasModulos
-        }]);
-    
-    if (error) console.error('Error guardando sesión:', error);
+async function eliminarPacienteDB(id) {
+    try {
+        await supabase.from('sesiones').delete().eq('id_del_paciente', id);
+        const { error } = await supabase.from('pacientes').delete().eq('id', id);
+        if (error) throw error;
+        pacientesCache = pacientesCache.filter(p => p.id !== id);
+        if (pacienteActivoId === id) {
+            await crearFichaEnBlanco();
+        }
+        return true;
+    } catch (error) {
+        console.error('Error eliminando paciente:', error);
+        throw error;
+    }
 }
 
-// ==================== FUNCIONES DE PANTALLA ====================
+async function guardarSesion(pacienteId, fecha, diagnosticos) {
+    try {
+        const { error } = await supabase
+            .from('sesiones')
+            .insert([{
+                id_del_paciente: pacienteId,
+                fecha: fecha,
+                diagnosticos: diagnosticos
+            }]);
+        if (error) throw error;
+        console.log('✅ Sesión guardada');
+    } catch (error) {
+        console.error('Error guardando sesión:', error);
+        throw error;
+    }
+}
+
+async function cargarSesiones(pacienteId) {
+    try {
+        const { data, error } = await supabase
+            .from('sesiones')
+            .select('*')
+            .eq('id_del_paciente', pacienteId)
+            .order('fecha', { ascending: true });
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error cargando sesiones:', error);
+        return [];
+    }
+}
+
+// ==================== FUNCIONES DE INTERFAZ ====================
 
 function limpiarPantalla() {
     document.getElementById('nombre-paciente').value = '';
@@ -987,16 +1022,12 @@ function limpiarPantalla() {
     document.getElementById('red-social').value = '';
     document.getElementById('telefono').value = '';
     document.getElementById('correo').value = '';
-    document.getElementById('nro-ficha').innerText = '---';    
-	document.getElementById('motivo-consulta').value = '';
+    document.getElementById('nro-ficha').innerText = '';
+    document.getElementById('motivo-consulta').value = '';
     document.getElementById('antecedentes').value = '';
     document.getElementById('evolucion').value = '';
-    
     document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
     document.querySelectorAll('.campo-ubicacion textarea').forEach(ta => ta.value = '');
-    
-    const buscador = document.getElementById('buscador-input');
-    if (buscador) buscador.value = '';
     
     const chkLegal = document.getElementById('chk-legal');
     if (chkLegal) {
@@ -1009,385 +1040,204 @@ function limpiarPantalla() {
 
 function cargarPacienteEnPantalla(paciente) {
     if (!paciente) return;
-
-    document.getElementById('nro-ficha').innerText = paciente.nroFicha || paciente.id || '---';
     document.getElementById('nombre-paciente').value = paciente.nombre || '';
     document.getElementById('apellido-paciente').value = paciente.apellido || '';
     document.getElementById('edad-paciente').value = paciente.edad || '';
     document.getElementById('signo-paciente').value = paciente.signo || '';
     document.getElementById('profesion-paciente').value = paciente.profesion || '';
-    document.getElementById('red-social').value = paciente.redSocial || '';
+    document.getElementById('red-social').value = paciente.red_social || '';
     document.getElementById('telefono').value = paciente.telefono || '';
     document.getElementById('correo').value = paciente.correo || '';
-    document.getElementById('nro-ficha').innerText = paciente.nroFicha || paciente.id;
-    document.getElementById('motivo-consulta').value = paciente.motivoConsulta || '';
+    document.getElementById('nro-ficha').innerText = paciente.nro_ficha || '';
+    document.getElementById('motivo-consulta').value = paciente.motivo || '';
     document.getElementById('antecedentes').value = paciente.antecedentes || '';
+    document.getElementById('evolucion').value = paciente.evolucion || '';
     
-    if (paciente.historial) {
-        const fechas = Object.keys(paciente.historial).sort();
-        const ultimaFecha = fechas[fechas.length - 1];
-        if (ultimaFecha) {
-            const ultimaSesion = paciente.historial[ultimaFecha];
-            document.getElementById('evolucion').value = ultimaSesion.evolucion || '';
-            
-            if (ultimaSesion.sintomas) {
-                for (const [grupoId, data] of Object.entries(ultimaSesion.sintomas)) {
-                    const grupo = document.querySelector(`.grupo-sintomas[data-grupo-id="${grupoId}"]`);
-                    if (!grupo) continue;
-                    const botones = grupo.querySelectorAll('.btn-opcion');
-                    botones.forEach(btn => btn.classList.remove('activo'));
-                    
-                    if (data.seleccionados && Array.isArray(data.seleccionados)) {
-                        data.seleccionados.forEach(seleccionado => {
-                            const boton = Array.from(botones).find(b => b.innerText.trim() === seleccionado);
-                            if (boton) boton.classList.add('activo');
-                        });
-                    }
-                    
-                    const ubicacionTextarea = grupo.querySelector('.campo-ubicacion textarea');
-                    if (ubicacionTextarea && data.ubicacion) {
-                        ubicacionTextarea.value = data.ubicacion;
-                    }
-                }
-            }
-        } else {
-            document.getElementById('evolucion').value = '';
-            document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
-            document.querySelectorAll('.campo-ubicacion textarea').forEach(ta => ta.value = '');
-        }
-    }
+    document.querySelectorAll('.campo-ubicacion textarea').forEach(ta => {
+        const idModulo = ta.closest('.campo-ubicacion')?.id.replace('ubicacion-', '');
+        if (idModulo === 'modulo1') ta.value = paciente.notas_lengua || '';
+        else if (idModulo === 'modulo2') ta.value = paciente.notas_audicion || '';
+        else if (idModulo === 'modulo3') ta.value = paciente.notas_interrogatorio || '';
+        else if (idModulo === 'modulo4') ta.value = paciente.notas_palpacion || '';
+    });
     
     const buscador = document.getElementById('buscador-input');
-    if (buscador) {
-        if (paciente.nombre) {
-            buscador.value = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim();
-        } else {
-            buscador.value = '';
-        }
-    }
+    if (buscador) buscador.value = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim();
     
     const chkLegal = document.getElementById('chk-legal');
     const fechaSpanExistente = document.getElementById('fecha-consentimiento');
     if (fechaSpanExistente) fechaSpanExistente.remove();
-
-    if (paciente.consentimientoDado) {
+    
+    if (paciente.consentimiento_dado) {
         chkLegal.checked = true;
         chkLegal.disabled = true;
-        if (paciente.consentimientoFecha) {
-            const fechaSpan = document.createElement('span');
-            fechaSpan.id = 'fecha-consentimiento';
-            fechaSpan.style.cssText = 'display: block; font-size: 11px; color: #7eb09e; margin-top: 5px;';
-            fechaSpan.innerHTML = `✅ Consentimiento aceptado el ${paciente.consentimientoFecha}`;
-            document.querySelector('.consentimiento-bloque').appendChild(fechaSpan);
-        }
+        const fechaSpan = document.createElement('span');
+        fechaSpan.id = 'fecha-consentimiento';
+        fechaSpan.style.cssText = 'display: block; font-size: 11px; color: #7eb09e; margin-top: 5px;';
+        fechaSpan.innerHTML = `✅ Consentimiento aceptado el ${paciente.consentimiento_fecha || ''}`;
+        document.querySelector('.consentimiento-bloque').appendChild(fechaSpan);
     } else {
         chkLegal.checked = false;
         chkLegal.disabled = false;
     }
+    
+    // Cargar último diagnóstico si existe (para mostrar en pantalla)
+    cargarUltimoDiagnostico(paciente.id);
 }
 
-// ==================== BUSCADOR Y LISTA ====================
+async function cargarUltimoDiagnostico(pacienteId) {
+    const sesiones = await cargarSesiones(pacienteId);
+    if (sesiones.length === 0) return;
+    const ultimaSesion = sesiones[sesiones.length - 1];
+    const diagnosticos = ultimaSesion.diagnosticos || {};
+    
+    // Aplicar diagnósticos a los botones
+    for (const [moduloId, valores] of Object.entries(diagnosticos)) {
+        for (const [grupoKey, valorSeleccionado] of Object.entries(valores)) {
+            const botones = document.querySelectorAll(`.btn-opcion`);
+            botones.forEach(btn => {
+                if (btn.innerText.trim() === valorSeleccionado) {
+                    const grupo = btn.closest('.grupo-sintomas');
+                    if (grupo && grupo.getAttribute('data-grupo-id')?.startsWith(moduloId)) {
+                        btn.classList.add('activo');
+                    }
+                }
+            });
+        }
+    }
+}
+
+async function crearFichaEnBlanco() {
+    const nuevoNro = ultimoNroFicha;
+    ultimoNroFicha++;
+    const nuevoPaciente = {
+        nro_ficha: nuevoNro,
+        nombre: '', apellido: '', edad: '', signo: '', profesion: '', red_social: '', telefono: '', correo: '',
+        motivo: '', antecedentes: '', evolucion: '',
+        notas_lengua: '', notas_audicion: '', notas_interrogatorio: '', notas_palpacion: '',
+        consentimiento_dado: false, consentimiento_fecha: null
+    };
+    const guardado = await guardarPaciente(nuevoPaciente);
+    pacienteActivoId = guardado.id;
+    limpiarPantalla();
+    cargarPacienteEnPantalla(guardado);
+    actualizarListaPacientes();
+}
+
+async function nuevaFicha() {
+    const nombreActual = document.getElementById('nombre-paciente').value.trim();
+    if (!nombreActual) {
+        alert(`ℹ️ La Ficha N° ${document.getElementById('nro-ficha').innerText} ya está en blanco.`);
+        document.getElementById('nombre-paciente').focus();
+        return;
+    }
+    await crearFichaEnBlanco();
+}
 
 function actualizarListaPacientes(textoBusqueda = '') {
     const contenedor = document.getElementById('lista-pacientes-contenido');
     if (!contenedor) return;
-    
-    let pacientesFiltrados = pacientesGlobal.filter(p => p.nombre && p.nombre.trim() !== '');
-    
-    if (textoBusqueda.trim() !== '') {
-        const busqueda = textoBusqueda.toLowerCase();
-        pacientesFiltrados = pacientesFiltrados.filter(p => 
-            (p.nombre && p.nombre.toLowerCase().includes(busqueda)) ||
-            (p.apellido && p.apellido.toLowerCase().includes(busqueda)) ||
-            (p.id && p.id.toString().includes(busqueda))
+    let filtrados = pacientesCache.filter(p => p.nombre && p.nombre.trim() !== '');
+    if (textoBusqueda.trim()) {
+        const busq = textoBusqueda.toLowerCase();
+        filtrados = filtrados.filter(p => 
+            (p.nombre && p.nombre.toLowerCase().includes(busq)) ||
+            (p.apellido && p.apellido.toLowerCase().includes(busq)) ||
+            (p.nro_ficha && p.nro_ficha.toString().includes(busq))
         );
     }
-    
-    if (pacientesFiltrados.length === 0) {
+    if (filtrados.length === 0) {
         contenedor.innerHTML = '<div id="lista-vacia">📋 No hay pacientes creados</div>';
         return;
     }
-    
-    pacientesFiltrados.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
-    
+    filtrados.sort((a,b) => (a.nombre || '').localeCompare(b.nombre || ''));
     let html = '';
-    pacientesFiltrados.forEach(p => {
+    filtrados.forEach(p => {
         html += `
-            <div class="paciente-item" data-id="${p.id}">
+            <div class="paciente-item">
                 <div class="paciente-info" onclick="seleccionarPaciente(${p.id})">
-                    <span class="paciente-nombre">#${p.id} - ${p.nombre || ''} ${p.apellido || ''}</span>
+                    <span class="paciente-nombre">#${p.nro_ficha} - ${p.nombre || ''} ${p.apellido || ''}</span>
                 </div>
                 <button class="btn-eliminar-paciente" onclick="eliminarPaciente(${p.id})">🗑️</button>
             </div>
         `;
     });
-
     contenedor.innerHTML = html;
 }
 
 async function seleccionarPaciente(id) {
-    const paciente = pacientesGlobal.find(p => p.id === id);
+    const paciente = pacientesCache.find(p => p.id === id);
     if (paciente) {
-        pacienteActivoGlobal = paciente;
+        pacienteActivoId = id;
         cargarPacienteEnPantalla(paciente);
         ocultarListaPacientes();
     }
 }
 
-// ==================== HISTORIAL ====================
-
-let historialCompleto = {};
-
-  
-    const paciente = window.pacientes.find(p => p.id === window.pacienteActivoId);
-    historialCompleto = paciente.historial || {};
-    
-    const contenedor = document.getElementById('historial-sesiones-lista');
-    if (!contenedor) return;
-    
-    if (Object.keys(historialCompleto).length === 0) {
-        contenedor.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No hay sesiones guardadas</div>';
-    } else {
-        const fechas = Object.keys(historialCompleto).sort();
-        let htmlAcumulado = '';
-        fechas.forEach(fecha => {
-            htmlAcumulado += generarBloqueHistorial(fecha);
-        });
-        contenedor.innerHTML = htmlAcumulado;
+async function eliminarPaciente(id) {
+    const paciente = pacientesCache.find(p => p.id === id);
+    if (!paciente) return;
+    if (confirm(`¿Eliminar permanentemente a "${paciente.nombre} ${paciente.apellido}"?`)) {
+        await eliminarPacienteDB(id);
+        await actualizarListaPacientes();
+        if (pacientesCache.length === 0) await crearFichaEnBlanco();
     }
-    
-    document.getElementById('panel-historial').style.display = 'flex';
 }
 
-// ==================== PDF COMPLETO (Sincronizado y Dinámico) ====================
+function ocultarListaPacientes() {
+    document.getElementById('panel-lista-pacientes').style.display = 'none';
+}
 
-function generarPDFCompleto() {
-    if (!window.pacienteActivoId) {
-        alert('⚠️ Primero seleccioná un paciente.');
+// ==================== GUARDAR CONSULTA ====================
+async function guardarConsulta() {
+    if (!pacienteActivoId) {
+        alert('⚠️ Primero creá o seleccioná un paciente.');
         return;
     }
-    
+    const nombreCampo = document.getElementById('nombre-paciente');
+    if (!nombreCampo.value.trim()) {
+        alert('⚠️ El nombre del paciente es obligatorio.');
+        nombreCampo.focus();
+        return;
+    }
     const chkLegal = document.getElementById('chk-legal');
     if (!chkLegal.checked) {
-        alert('⚠️ El paciente debe aceptar el consentimiento para generar el PDF.');
+        alert('⚠️ El paciente debe aceptar el consentimiento.');
         chkLegal.focus();
         return;
     }
     
-    const paciente = window.pacientes.find(p => p.id === window.pacienteActivoId);
-    if (!paciente) return;
-    
-    const nombreCentro = document.getElementById('nombre-centro-txt').innerText;
-    const nombreCompleto = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim().toUpperCase();
-    
-    let htmlContent = `
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Historial Clínico - ${nombreCompleto}</title>
-            <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; color: #2c3e50; }
-                .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #c4a27a; }
-                .centro-nombre { font-size: 18px; font-weight: bold; color: #6b4c3a; text-transform: uppercase; }
-                h1 { font-size: 20px; color: #6b4c3a; margin: 5px 0; }
-                h2 { font-size: 14px; color: #ffffff; background-color: #6b4c3a; margin: 20px 0 10px 0; padding: 6px 10px; border-radius: 6px; text-transform: uppercase; }
-                .datos-paciente { background: #fefcf8; border: 1px solid #e8dccc; padding: 10px 12px; border-radius: 12px; margin-bottom: 20px; }
-                .grid-datos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-                .campo-label { font-weight: bold; font-size: 11px; color: #8b7355; text-transform: uppercase; }
-                .campo-valor { font-size: 13px; color: #4a3a2a; }
-                
-                .bloque-metodo { margin-bottom: 20px; padding: 12px; border: 1px solid #e8dccc; border-radius: 12px; background: #ffffff; page-break-inside: avoid; }
-                .titulo-metodo { font-size: 14px; font-weight: bold; color: #6b4c3a; border-bottom: 1px solid #c4a27a; padding-bottom: 4px; margin-bottom: 8px; }
-                .fecha-registro { font-size: 12px; font-weight: bold; color: #c4a27a; margin-top: 8px; margin-bottom: 2px; }
-                .linea-sintoma { font-size: 12px; color: #2c3e50; margin-left: 10px; margin-bottom: 2px; }
-                
-                .seccion-notas { margin-top: 12px; padding-top: 6px; border-top: 1px dashed #e8dccc; }
-                .titulo-notas { font-size: 12px; font-weight: bold; color: #8b7355; margin-bottom: 4px; }
-                .linea-nota { font-size: 12px; color: #6b4c3a; margin-left: 10px; font-style: italic; margin-bottom: 2px; }
-                
-                .consentimiento { margin-top: 30px; padding: 15px; background: #fef9ef; border: 1px dashed #d4c0a0; border-radius: 12px; font-size: 11px; text-align: center; color: #8b6b40; }
-                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #b8a07c; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="centro-nombre">${nombreCentro}</div>
-                <h1>Historial Clínico de Evolución</h1>
-                <p style="font-size: 12px; color: #8b7355; margin-top: 4px;">Generado el ${new Date().toLocaleDateString('es-ES')}</p>
-            </div>
-            
-            <div class="datos-paciente">
-                <div class="grid-datos">
-                    <div class="campo"><div class="campo-label">Paciente</div><div class="campo-valor">${nombreCompleto}</div></div>
-                    <div class="campo"><div class="campo-label">N° Ficha</div><div class="campo-valor">${paciente.nroFicha || paciente.id}</div></div>
-                    <div class="campo"><div class="campo-label">Edad</div><div class="campo-valor">${paciente.edad || '-'}</div></div>
-                    <div class="campo"><div class="campo-label">Signo</div><div class="campo-valor">${paciente.signo || '-'}</div></div>
-                    <div class="campo"><div class="campo-label">Profesión</div><div class="campo-valor">${paciente.profesion || '-'}</div></div>
-                    <div class="campo"><div class="campo-label">Teléfono</div><div class="campo-valor">${paciente.telefono || '-'}</div></div>
-                </div>
-            </div>
-
-            <h2>📝 MOTIVO, ANTECEDENTES Y EVOLUCIÓN CLÍNICOS</h2>
-            <div class="datos-paciente">
-                <div class="campo"><div class="campo-label">Motivo de consulta</div><div class="campo-valor">${paciente.motivoConsulta || '(no registrado)'}</div></div>
-                <div class="campo" style="margin-top: 10px;"><div class="campo-label">Antecedentes & Medicación</div><div class="campo-valor">${paciente.antecedentes || '(no registrados)'}</div></div>
-                <div class="campo" style="margin-top: 10px;"><div class="campo-label">Evolución / Notas actuales</div><div class="campo-valor">${document.getElementById('evolucion').value || '(no registrada)'}</div></div>
-            </div>
-            
-            <h2>📋 EVOLUCIÓN DE MÉTODOS DE DIAGNÓSTICO</h2>
-    `;
-    
-    // Convertir historial a arreglo y ordenar cronológicamente por fecha (DD/MM/AAAA)
-    const fechasOrdenadas = Object.keys(paciente.historial || {}).sort((a, b) => {
-        const [diaA, mesA, anioA] = a.split('/').map(Number);
-        const [diaB, mesB, anioB] = b.split('/').map(Number);
-        return new Date(anioA, mesA - 1, diaA) - new Date(anioB, mesB - 1, diaB);
-    });
-    
-    // Recorremos los 4 métodos de MTC de forma secuencial y estructurada
+    // Recolectar diagnósticos actuales
+    const diagnosticosActuales = {};
     modulos.forEach(mod => {
-        const idMod = mod.id;
-        let htmlModContenido = '';
-        let htmlNotasContenido = '';
-        let tieneDatosMetodo = false;
-        
-        fechasOrdenadas.forEach(fecha => {
-            const sesion = paciente.historial[fecha];
-            if (!sesion) return;
-            
-            // 1. Buscamos qué subítems específicos fueron marcados en esta fecha dentro de este módulo
-            let lineasSintomasDeEstaFecha = '';
-            mod.grupos.forEach((grupo, gIdx) => {
-                const grupoId = `${idMod}_grupo_${gIdx}`;
-                if (sesion.sintomas && sesion.sintomas[grupoId] && sesion.sintomas[grupoId].seleccionados && sesion.sintomas[grupoId].seleccionados.length > 0) {
-                    lineasSintomasDeEstaFecha += `<div class="linea-sintoma"><strong>${grupo.nombre}:</strong> ${sesion.sintomas[grupoId].seleccionados.join(', ')}</div>`;
-                }
-            });
-            
-            // Si tiene datos marcados en esta consulta, los añadimos cronológicamente
-            if (lineasSintomasDeEstaFecha !== '') {
-                tieneDatosMetodo = true;
-                htmlModContenido += `<div class="fecha-registro">📅 ${fecha}</div>`;
-                htmlModContenido += lineasSintomasDeEstaFecha;
-            }
-            
-            // 2. Extraemos las notas específicas del módulo para esta fecha si existen
-            if (sesion.notasModulos && sesion.notasModulos[idMod] && sesion.notasModulos[idMod].trim() !== '') {
-                tieneDatosMetodo = true;
-                htmlNotasContenido += `<div class="linea-nota"><strong>${fecha}:</strong> ${sesion.notasModulos[idMod].trim()}</div>`;
+        const moduloDiagnostico = {};
+        mod.grupos.forEach((grupo, idx) => {
+            const grupoId = `${mod.id}_grupo_${idx}`;
+            const botonActivo = document.querySelector(`.grupo-sintomas[data-grupo-id="${grupoId}"] .btn-opcion.activo`);
+            if (botonActivo) {
+                moduloDiagnostico[grupo.nombre] = botonActivo.innerText.trim();
             }
         });
-        
-        // Si el módulo registró información clínica o notas de evolución, renderizamos su bloque limpio
-        if (tieneDatosMetodo) {
-            htmlContent += `<div class="bloque-metodo">`;
-            htmlContent += `<div class="titulo-metodo">${mod.titulo}</div>`;
-            
-            if (htmlModContenido !== '') {
-                htmlContent += htmlModContenido;
-            }
-            
-            // Agregamos el texto de notas al final del módulo si tiene algo escrito
-            if (htmlNotasContenido !== '') {
-                htmlContent += `<div class="seccion-notas">`;
-                htmlContent += `<div class="titulo-notas">Notas:</div>`;
-                htmlContent += htmlNotasContenido;
-                htmlContent += `</div>`;
-            }
-            
-            htmlContent += `</div>`;
+        if (Object.keys(moduloDiagnostico).length > 0) {
+            diagnosticosActuales[mod.id] = moduloDiagnostico;
         }
     });
     
-    htmlContent += `
-            <div class="consentimiento">
-                <strong>Documento de Uso Interno Confidencial</strong><br>
-                El paciente otorga su conformidad para el almacenamiento digitalizado de su evolución clínica bajo las normas vigentes.
-                ${paciente.consentimientoFecha ? `<br><br>✅ Aceptado el ${paciente.consentimientoFecha}` : ''}
-            </div>
-            <div class="footer">Asistente Clínico - ${nombreCentro}</div>
-        </body>
-        </html>
-    `;
-    
-    const ventanaImpresion = window.open('', '_blank');
-    ventanaImpresion.document.write(htmlContent);
-    ventanaImpresion.document.close();
-    
-    setTimeout(() => {
-        ventanaImpresion.print();
-        ventanaImpresion.close();
-    }, 250);
-}
-
-// ==================== LÓGICA DE CONTROL DE FICHAS ====================
-
-function nuevaFicha() {
-    // Generar ID único usando timestamp
-    const nuevoId = Date.now();
-    
-    // Crear objeto paciente vacío
-    const nuevoPaciente = {
-        id: nuevoId,
-        nroFicha: nuevoId.toString(),
-        nombre: '',
-        apellido: '',
-        edad: '',
-        signo: '',
-        profesion: '',
-        redSocial: '',
-        telefono: '',
-        correo: '',
-        motivoConsulta: '',
-        antecedentes: '',
-        evolucion: '',
-        consentimientoDado: false,
-        consentimientoFecha: null
+    // Recolectar notas de módulos
+    const notasModulos = {
+        modulo1: document.querySelector('#ubicacion-modulo1 textarea')?.value || '',
+        modulo2: document.querySelector('#ubicacion-modulo2 textarea')?.value || '',
+        modulo3: document.querySelector('#ubicacion-modulo3 textarea')?.value || '',
+        modulo4: document.querySelector('#ubicacion-modulo4 textarea')?.value || ''
     };
     
-    // Agregar a la lista global
-    pacientesGlobal.push(nuevoPaciente);
-    pacienteActivoGlobal = nuevoPaciente;
+    const fecha = document.getElementById('fecha-actual').innerText;
+    const pacienteActual = pacientesCache.find(p => p.id === pacienteActivoId);
     
-    // Limpiar pantalla y cargar la nueva ficha
-    limpiarPantalla();
-    cargarPacienteEnPantalla(nuevoPaciente);
-    actualizarListaPacientes();
-    ocultarListaPacientes();
-    
-    // Mostrar el número de ficha
-    document.getElementById('nro-ficha').innerText = nuevoId;
-    
-    // Opcional: enfocar el campo nombre
-    document.getElementById('nombre-paciente').focus();
-}
-
-// ==================== GUARDAR CONSULTA (Estructura Corregida) ====================
-
-async function guardarConsulta() {
-    if (!pacienteActivoGlobal) {
-        alert('⚠️ Primero creá o seleccioná un paciente.');
-        return;
-    }
-    
-    const nombreCampo = document.getElementById('nombre-paciente');
-    if (!nombreCampo || nombreCampo.value.trim() === '') {
-        alert('⚠️ Para guardar la consulta, es obligatorio ingresar el Nombre del paciente.');
-        if (nombreCampo) nombreCampo.focus();
-        return;
-    }
-    
-    const chkLegal = document.getElementById('chk-legal');
-    if (!chkLegal || !chkLegal.checked) {
-        alert('⚠️ El paciente debe aceptar el consentimiento para poder guardar la consulta.');
-        if (chkLegal) chkLegal.focus();
-        return;
-    }
-    
-    // Armar objeto paciente actualizado
+    // Actualizar datos del paciente
     const pacienteActualizado = {
-        id: pacienteActivoGlobal.id,
-        nombre: nombreCampo.value,
+        ...pacienteActual,
+        nombre: document.getElementById('nombre-paciente').value,
         apellido: document.getElementById('apellido-paciente').value,
         edad: document.getElementById('edad-paciente').value,
         signo: document.getElementById('signo-paciente').value,
@@ -1397,467 +1247,319 @@ async function guardarConsulta() {
         correo: document.getElementById('correo').value,
         motivo: document.getElementById('motivo-consulta').value,
         antecedentes: document.getElementById('antecedentes').value,
-        consentimiento_dado: true,
-        consentimiento_fecha: pacienteActivoGlobal.consentimiento_fecha || new Date().toLocaleDateString('es-ES')
+        evolucion: document.getElementById('evolucion').value,
+        notas_lengua: notasModulos.modulo1,
+        notas_audicion: notasModulos.modulo2,
+        notas_interrogatorio: notasModulos.modulo3,
+        notas_palpacion: notasModulos.modulo4
     };
     
-    // Capturar síntomas actuales
-    const sintomas = {};
-    document.querySelectorAll('.grupo-sintomas').forEach(grupo => {
-        const grupoId = grupo.getAttribute('data-grupo-id');
-        if (!grupoId) return;
-        const botones = grupo.querySelectorAll('.btn-opcion');
-        const seleccionados = Array.from(botones)
-            .filter(btn => btn.classList.contains('activo'))
-            .map(btn => btn.innerText.trim());
-        sintomas[grupoId] = { seleccionados };
-    });
-    
-    // Capturar notas de módulos
-    const notasModulos = {};
-    modulos.forEach(mod => {
-        const txtArea = document.querySelector(`#ubicacion-${mod.id} textarea`);
-        notasModulos[mod.id] = txtArea ? txtArea.value : '';
-    });
-    
-    const fecha = document.getElementById('fecha-actual').innerText;
-    const evolucion = document.getElementById('evolucion').value;
-    
-    try {
-        // 1. Guardar/Actualizar paciente en Supabase
-        await guardarPacienteEnSupabase(pacienteActualizado);
-        
-        // 2. Guardar la sesión en tabla "sesiones"
-        await guardarSesionEnSupabase(pacienteActivoGlobal.id, fecha, {
-            evolucion: evolucion,
-            sintomas: sintomas,
-            notasModulos: notasModulos
-        });
-        
-        // 3. Actualizar cache global
-        const index = pacientesGlobal.findIndex(p => p.id === pacienteActivoGlobal.id);
-        if (index !== -1) {
-            pacientesGlobal[index] = { ...pacientesGlobal[index], ...pacienteActualizado };
+    if (chkLegal.checked && !pacienteActual.consentimiento_dado) {
+        pacienteActualizado.consentimiento_dado = true;
+        pacienteActualizado.consentimiento_fecha = fecha;
+        chkLegal.disabled = true;
+        if (!document.getElementById('fecha-consentimiento')) {
+            const fechaSpan = document.createElement('span');
+            fechaSpan.id = 'fecha-consentimiento';
+            fechaSpan.style.cssText = 'display: block; font-size: 11px; color: #7eb09e; margin-top: 5px;';
+            fechaSpan.innerHTML = `✅ Consentimiento aceptado el ${fecha}`;
+            document.querySelector('.consentimiento-bloque').appendChild(fechaSpan);
         }
-        
-        alert(`✅ Consulta guardada correctamente (${fecha})`);
-        
-    } catch (error) {
-        console.error('Error al guardar:', error);
-        alert('❌ Error al guardar en la nube. Revisá la conexión.');
     }
+    
+    await guardarPaciente(pacienteActualizado);
+    await guardarSesion(pacienteActivoId, fecha, diagnosticosActuales);
+    await cargarPacientes();
+    actualizarListaPacientes();
+    alert(`✅ Consulta guardada correctamente (${fecha})`);
 }
 
-function ocultarListaPacientes() {
-    const panel = document.getElementById('panel-lista-pacientes');
-    if (panel) panel.style.display = 'none';
-}
-
-// ==================== VISUALIZACIÓN RÁPIDA DEL HISTORIAL (Relojito) ====================
-
+// ==================== HISTORIAL ====================
 async function verHistorial() {
-    if (!pacienteActivoGlobal) {
+    if (!pacienteActivoId) {
         alert('⚠️ Primero seleccioná un paciente.');
         return;
     }
-    
-    const { data: sesiones, error } = await miClienteSupabase
-        .from('sesiones')
-        .select('*')
-        .eq('paciente_id', pacienteActivoGlobal.id)
-        .order('fecha', { ascending: false });
-    
-    if (error) {
-        console.error('Error cargando historial:', error);
-        alert('Error al cargar el historial');
-        return;
-    }
-    
+    const sesiones = await cargarSesiones(pacienteActivoId);
     const contenedor = document.getElementById('historial-sesiones-lista');
-    if (!contenedor) return;
-    
-    if (!sesiones || sesiones.length === 0) {
-        contenedor.innerHTML = '<div style="text-align: center; padding: 20px;">No hay sesiones guardadas</div>';
+    if (sesiones.length === 0) {
+        contenedor.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No hay sesiones guardadas</div>';
     } else {
         let html = '';
-        sesiones.forEach(sesion => {
-            html += `
-                <div style="border-left: 3px solid #c4a27a; background: #fefcf8; margin-bottom: 15px; padding: 12px; border-radius: 12px;">
-                    <div style="font-weight: bold; font-size: 18px; color: #6b4c3a; margin-bottom: 12px;">📅 ${sesion.fecha}</div>
-                    <div style="font-size: 13px; color: #4a3a2a;">${sesion.evolucion || 'Sin evolución registrada'}</div>
-                </div>
-            `;
-        });
+        for (const sesion of sesiones) {
+            html += `<div style="border-left: 3px solid #c4a27a; background: #fefcf8; margin-bottom: 15px; padding: 12px; border-radius: 12px;">`;
+            html += `<div style="font-weight: bold; font-size: 18px; color: #6b4c3a; margin-bottom: 12px;">📅 ${sesion.fecha}</div>`;
+            const diag = sesion.diagnosticos || {};
+            for (const [modId, valores] of Object.entries(diag)) {
+                const modulo = modulos.find(m => m.id === modId);
+                if (modulo) {
+                    html += `<div style="margin-bottom: 8px;"><strong style="color: #8b7355;">${modulo.titulo}:</strong><br>`;
+                    for (const [grupo, valor] of Object.entries(valores)) {
+                        html += `<span style="font-size: 13px; margin-left: 10px;">• ${grupo}: ${valor}</span><br>`;
+                    }
+                    html += `</div>`;
+                }
+            }
+            html += `</div>`;
+        }
         contenedor.innerHTML = html;
     }
-    
     document.getElementById('panel-historial').style.display = 'flex';
 }
-	
 
 function cerrarHistorial() {
     document.getElementById('panel-historial').style.display = 'none';
 }
 
-
-
 function cerrarPanelSiClickFuera(event) {
-    if (event.target === document.getElementById('panel-historial')) {
-        cerrarHistorial();
-    }
+    if (event.target === document.getElementById('panel-historial')) cerrarHistorial();
 }
 
-
-
-// ==================== LÓGICA DE AJUSTES Y BACKUP JSON ====================
-
-function editarNombreCentro() {
-    // Ahora al tocar el engranaje, en vez de un prompt a ciegas, abrimos el panel flotante
-    document.getElementById('panel-ajustes').style.display = 'flex';
-}
-
-function cerrarAjustes() {
-    document.getElementById('panel-ajustes').style.display = 'none';
-}
-
-function ajustarNombreCentro() {
-    const nombreActual = document.getElementById('nombre-centro-txt').innerText;
-    const nuevoNombre = prompt("Ingresá el nombre de tu centro:", nombreActual);
-    if (nuevoNombre && nuevoNombre.trim() !== "") {
-        document.getElementById('nombre-centro-txt').innerText = nuevoNombre.trim().toUpperCase();
-        // Ya no hay db_guardar, el nombre se guarda solo en la pantalla
-    }
-}
-
-// Función para descargar el archivo .json al dispositivo
-function exportarBackupJSON() {
-    const datosGuardados = localStorage.getItem('db_terapias');
-    if (!datosGuardados) {
-        alert("⚠️ No hay datos registrados para exportar.");
+// ==================== PDF ====================
+async function generarPDFCompleto() {
+    if (!pacienteActivoId) {
+        alert('⚠️ Primero seleccioná un paciente.');
         return;
     }
-    
-    // Formateamos la fecha actual para el nombre del archivo (ej: 21-05-2026)
-    const hoy = new Date();
-    const fechaStr = `${String(hoy.getDate()).padStart(2, '0')}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${hoy.getFullYear()}`;
-    
-    // Creamos el archivo de texto invisible en memoria y lo descargamos de forma nativa
-    const dataBlob = new Blob([datosGuardados], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    
-    const enlaceDescarga = document.createElement('a');
-    enlaceDescarga.href = url;
-    enlaceDescarga.download = `backup_pacientes_${fechaStr}.json`;
-    document.body.appendChild(enlaceDescarga);
-    enlaceDescarga.click();
-    
-    // Limpiamos la memoria
-    document.body.removeChild(enlaceDescarga);
-    URL.revokeObjectURL(url);
-    
-    cerrarAjustes();
-}
-
-// Función para leer el archivo .json subido por el usuario
-function importarBackupJSON(event) {
-    const archivo = event.target.files[0];
-    if (!archivo) return;
-    
-    if (!confirm("⚠️ ¿Estás seguro de que querés cargar este archivo?\nEsto reemplazará los pacientes actuales en pantalla por los del archivo de respaldo.")) {
-        event.target.value = ''; // Resetea el input
+    const chkLegal = document.getElementById('chk-legal');
+    if (!chkLegal.checked) {
+        alert('⚠️ El paciente debe aceptar el consentimiento.');
         return;
     }
+    const paciente = pacientesCache.find(p => p.id === pacienteActivoId);
+    if (!paciente) return;
+    const sesiones = await cargarSesiones(pacienteActivoId);
+    const nombreCentro = document.getElementById('nombre-centro-txt').innerText;
+    const nombreCompleto = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim().toUpperCase();
     
-    const lector = new FileReader();
-    lector.onload = function(e) {
-        try {
-            const contenido = e.target.result;
-            // Validamos que sea un JSON válido de nuestra aplicación
-            const datosParseados = JSON.parse(contenido);
-            
-            if (!datosParseados.pacientes) {
-                throw new Error("El archivo no corresponde a la base de datos del asistente.");
+    let htmlContent = `<html><head><meta charset="UTF-8"><title>Historial Clínico - ${nombreCompleto}</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; }
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #c4a27a; }
+        h2 { background: #6b4c3a; color: white; padding: 6px 10px; border-radius: 6px; font-size: 14px; }
+        .datos { background: #fefcf8; border: 1px solid #e8dccc; padding: 12px; border-radius: 12px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; }
+        .bloque { margin-bottom: 15px; padding: 12px; border: 1px solid #e8dccc; border-radius: 12px; }
+        .fecha { font-weight: bold; color: #c4a27a; margin-top: 8px; }
+    </style>
+    </head><body>
+    <div class="header"><div class="centro-nombre">${nombreCentro}</div><h1>Historial Clínico</h1><p>${new Date().toLocaleDateString()}</p></div>
+    <div class="datos"><div class="grid">
+        <div><strong>Paciente:</strong> ${nombreCompleto}</div>
+        <div><strong>N° Ficha:</strong> ${paciente.nro_ficha}</div>
+        <div><strong>Edad:</strong> ${paciente.edad || '-'}</div>
+        <div><strong>Teléfono:</strong> ${paciente.telefono || '-'}</div>
+    </div></div>
+    <h2>📝 MOTIVO, ANTECEDENTES Y EVOLUCIÓN</h2>
+    <div class="datos"><strong>Motivo:</strong> ${paciente.motivo || '-'}<br><br>
+    <strong>Antecedentes:</strong> ${paciente.antecedentes || '-'}<br><br>
+    <strong>Evolución actual:</strong> ${paciente.evolucion || '-'}</div>
+    <h2>📋 EVOLUCIÓN DE DIAGNÓSTICOS</h2>`;
+    
+    for (const sesion of sesiones) {
+        htmlContent += `<div class="bloque"><div class="fecha">📅 ${sesion.fecha}</div>`;
+        const diag = sesion.diagnosticos || {};
+        for (const [modId, valores] of Object.entries(diag)) {
+            const modulo = modulos.find(m => m.id === modId);
+            if (modulo) {
+                htmlContent += `<div><strong>${modulo.titulo}</strong><br>`;
+                for (const [grupo, valor] of Object.entries(valores)) {
+                    htmlContent += `&nbsp;&nbsp;• ${grupo}: ${valor}<br>`;
+                }
+                htmlContent += `</div>`;
             }
-            
-            // Si pasa el control, guardamos en el localStorage del navegador
-            localStorage.setItem('db_terapias', contenido);
-            
-            alert("✅ Copia de seguridad restaurada con éxito. La aplicación se reiniciará para aplicar los cambios.");
-            location.reload(); // Recarga la pestaña para que aparezca la nueva lista limpia
-            
-        } catch (error) {
-            alert("❌ Error: El archivo seleccionado no es válido o está dañado.");
-            console.error(error);
         }
-    };
-    
-    lector.readAsText(archivo);
-    cerrarAjustes();
-}
-
-function mostrarFechaActual() {
-    const hoy = new Date();
-    const dia = String(hoy.getDate()).padStart(2, '0');
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    const anio = hoy.getFullYear();
-    document.getElementById('fecha-actual').innerText = `${dia}/${mes}/${anio}`;
-}
-
-const modulos = [
-    {
-        id: "modulo1",
-        titulo: "Observación de la Lengua (Wàng Zhěn)",
-        grupos: [
-            { nombre: "Color del Cuerpo de la Lengua", multiple: false, opciones: ["Rosada / Normal", "Pálida", "Roja", "Roja Oscura / Carmesí", "Púrpura / Violácea"] },
-            { nombre: "Forma del Cuerpo", multiple: false, opciones: ["Normal", "Hinchada / Obesa", "Delgada", "Fisurada / Agrietada", "Desviada"] },
-            { nombre: "Saburra / Capa de la Lengua", multiple: false, opciones: ["Fina / Normal", "Gruesa", "Blanca", "Amarilla", "Húmeda", "Seca", "Pelada / Geográfica"] }
-        ]
-    },
-    {
-        id: "modulo2",
-        titulo: "Audición y Olfato (Wén Zhěn)",
-        grupos: [
-            { nombre: "Sonido de la Voz", multiple: false, opciones: ["Normal / Clara", "Débil / Baja / Sin Fuerza", "Fuerte / Alta / Ruidosa", "Ronquera / Pérdida de voz"] },
-            { nombre: "Respiración y Tos", multiple: false, opciones: ["Normal", "Débil / Respiración Corta", "Fuerte / Pesada / Disnea", "Tos Débil / Crónica", "Tos Fuerte / Aguda"] },
-            { nombre: "Otros ruidos patológicos", multiple: false, opciones: ["Ninguno", "Suspiros frecuentes", "Hipo", "Eructos"] }
-        ]
-    },
-    {
-        id: "modulo3",
-        titulo: "Interrogatorio (Wèn Zhěn)",
-        grupos: [
-            { nombre: "Temperatura y Sudoración", multiple: false, opciones: ["Aversión al Frío / Temor al frío", "Aversión al Calor / Fiebre", "Calor en los 5 Corazones", "Sudor Espontáneo / Diurno", "Sudor Nocturno"] },
-            { nombre: "Digestión y Heces", multiple: false, opciones: ["Heces Blandas / Diarrea", "Estreñimiento / Heces secas", "Distensión / Gases después de comer"] },
-            { nombre: "Sed y Líquidos", multiple: false, opciones: ["Normal / Sin sed particular", "Ausencia de Sed", "Mucha Sed / Bebidas frías", "Sed / Bebidas calientes"] },
-            { nombre: "Sueño y Energía", multiple: false, opciones: ["Insomnio / Dificultad para conciliar", "Somnolencia / Cansancio de día", "Falta de energía general / Astenia"] }
-        ]
-    },
-    {
-        id: "modulo4",
-        titulo: "Palpación / Pulsos (Qiè Zhěn)",
-        grupos: [
-            { nombre: "Profundidad del Pulso", multiple: false, opciones: ["Normal", "Superficial", "Profundo"] },
-            { nombre: "Velocidad del Pulso", multiple: false, opciones: ["Normal", "Lento", "Rápido"] },
-            { nombre: "Fuerza y Cualidad del Pulso", multiple: false, opciones: ["Débil / Vacío", "Fuerte / Lleno", "Cuerda / Tenso", "Deslizante / Resbaladizo"] }
-        ]
+        htmlContent += `</div>`;
     }
+    htmlContent += `<div class="datos" style="text-align:center; margin-top:20px;">Documento de uso interno - Consentimiento dado el ${paciente.consentimiento_fecha || ''}</div></body></html>`;
+    
+    const ventana = window.open('', '_blank');
+    ventana.document.write(htmlContent);
+    ventana.document.close();
+    setTimeout(() => { ventana.print(); ventana.close(); }, 250);
+}
+
+// ==================== MÓDULOS Y ACORDEONES ====================
+const modulos = [
+    { id: "modulo1", titulo: "Observación de la Lengua (Wàng Zhěn)", grupos: [
+        { nombre: "Color del Cuerpo de la Lengua", multiple: false, opciones: ["Rosada / Normal", "Pálida", "Roja", "Roja Oscura / Carmesí", "Púrpura / Violácea"] },
+        { nombre: "Forma del Cuerpo", multiple: false, opciones: ["Normal", "Hinchada / Obesa", "Delgada", "Fisurada / Agrietada", "Desviada"] },
+        { nombre: "Saburra / Capa de la Lengua", multiple: false, opciones: ["Fina / Normal", "Gruesa", "Blanca", "Amarilla", "Húmeda", "Seca", "Pelada / Geográfica"] }
+    ] },
+    { id: "modulo2", titulo: "Audición y Olfato (Wén Zhěn)", grupos: [
+        { nombre: "Sonido de la Voz", multiple: false, opciones: ["Normal / Clara", "Débil / Baja / Sin Fuerza", "Fuerte / Alta / Ruidosa", "Ronquera / Pérdida de voz"] },
+        { nombre: "Respiración y Tos", multiple: false, opciones: ["Normal", "Débil / Respiración Corta", "Fuerte / Pesada / Disnea", "Tos Débil / Crónica", "Tos Fuerte / Aguda"] },
+        { nombre: "Otros ruidos patológicos", multiple: false, opciones: ["Ninguno", "Suspiros frecuentes", "Hipo", "Eructos"] }
+    ] },
+    { id: "modulo3", titulo: "Interrogatorio (Wèn Zhěn)", grupos: [
+        { nombre: "Temperatura y Sudoración", multiple: false, opciones: ["Aversión al Frío / Temor al frío", "Aversión al Calor / Fiebre", "Calor en los 5 Corazones", "Sudor Espontáneo / Diurno", "Sudor Nocturno"] },
+        { nombre: "Digestión y Heces", multiple: false, opciones: ["Heces Blandas / Diarrea", "Estreñimiento / Heces secas", "Distensión / Gases después de comer"] },
+        { nombre: "Sed y Líquidos", multiple: false, opciones: ["Normal / Sin sed particular", "Ausencia de Sed", "Mucha Sed / Bebidas frías", "Sed / Bebidas calientes"] },
+        { nombre: "Sueño y Energía", multiple: false, opciones: ["Insomnio / Dificultad para conciliar", "Somnolencia / Cansancio de día", "Falta de energía general / Astenia"] }
+    ] },
+    { id: "modulo4", titulo: "Palpación / Pulsos (Qiè Zhěn)", grupos: [
+        { nombre: "Profundidad del Pulso", multiple: false, opciones: ["Normal", "Superficial", "Profundo"] },
+        { nombre: "Velocidad del Pulso", multiple: false, opciones: ["Normal", "Lento", "Rápido"] },
+        { nombre: "Fuerza y Cualidad del Pulso", multiple: false, opciones: ["Débil / Vacío", "Fuerte / Lleno", "Cuerda / Tenso", "Deslizante / Resbaladizo"] }
+    ] }
 ];
 
 function generarModulos() {
     const contenedor = document.getElementById('acordeones');
     let html = '';
-    
-    modulos.forEach((mod, idx) => {
-        const idModulo = mod.id;
-        html += `<div id="item-${idModulo}" class="acordeon-item" style="margin-bottom: 8px;">`;
-        
-        // Título principal: menos alto (padding 7px) y letra un poquito más grande (15px seminegrita)
-        html += `<div class="acordeon-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; background-color: #faf5ea;">`;
-        html += `<div onclick="toggleAcordeon('${idModulo}')" style="flex: 1; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; font-size: 15px; font-weight: 600; color: #6b4c3a;">`;
-        html += `<span>${mod.titulo}</span>`;
-        html += `<span id="flecha-${idModulo}" style="font-size: 11px;">►</span>`;
+    modulos.forEach(mod => {
+        html += `<div id="item-${mod.id}" class="acordeon-item">`;
+        html += `<div class="acordeon-header" style="display: flex; justify-content: space-between; align-items: center;">`;
+        html += `<div onclick="toggleAcordeon('${mod.id}')" style="flex:1; cursor:pointer; display: flex; justify-content: space-between; padding: 7px 14px;"><span>${mod.titulo}</span><span id="flecha-${mod.id}">►</span></div>`;
+        html += `<button class="btn-ubicacion" onclick="toggleCampoUbicacion('${mod.id}')">📍</button>`;
         html += `</div>`;
-        html += `<button class="btn-ubicacion" onclick="toggleCampoUbicacion('${idModulo}')" title="Agregar notas del módulo" style="padding: 7px 14px; font-size: 16px; background: none; border: none; cursor: pointer; color: #c4a27a;">📍</button>`;
-        html += `</div>`;
-        
-        // Contenido del módulo con espacios reducidos para el teléfono
-        html += `<div id="${idModulo}" class="acordeon-contenido" style="display: none; padding: 14px; background-color: #ffffff;">`;
-        
-        // Dibujamos primero los subítems con sus botones
-        mod.grupos.forEach((grupo, gIdx) => {
-            const grupoId = `${idModulo}_grupo_${gIdx}`;
-            html += `<div class="grupo-sintomas" data-grupo-id="${grupoId}" style="margin-bottom: 12px; border-bottom: 1px dashed #f0e8da; padding-bottom: 10px;">`;
-            html += `<div class="grupo-header" style="margin-bottom: 6px;">`;
-            html += `<h3 style="font-size: 13px; color: #6b4c3a; font-weight: bold;">${grupo.nombre}</h3>`;
-            html += `</div>`;
-            html += `<div class="grid-botones" id="botones-${grupoId}">`;
-            grupo.opciones.forEach(opcion => {
-                html += `<button class="btn-opcion" onclick="seleccionarBoton(this, ${grupo.multiple})">${opcion}</button>`;
+        html += `<div id="${mod.id}" class="acordeon-contenido" style="display:none; padding:14px;">`;
+        mod.grupos.forEach((grupo, idx) => {
+            const grupoId = `${mod.id}_grupo_${idx}`;
+            html += `<div class="grupo-sintomas" data-grupo-id="${grupoId}" style="margin-bottom:12px;">`;
+            html += `<h3 style="font-size:13px;">${grupo.nombre}</h3>`;
+            html += `<div class="grid-botones">`;
+            grupo.opciones.forEach(op => {
+                html += `<button class="btn-opcion" onclick="seleccionarBoton(this, ${grupo.multiple})">${op}</button>`;
             });
-            html += `</div>`;
-            html += `</div>`;
+            html += `</div></div>`;
         });
-        
-        // El cuadro de notas se ubica al FINAL de todo el módulo
-        html += `<div class="campo-ubicacion" id="ubicacion-${idModulo}" style="display:none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0e8da;">`;
-        html += `<label style="font-size: 10px; color: #8b7355; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 4px;">📝 NOTAS GENERALES DE ESTE DIAGNÓSTICO:</label>`;
-        html += `<textarea placeholder="Anotaciones generales sobre este método..." rows="2" style="width: 100%; padding: 8px; font-size: 13px; border: 1px solid #e8dccc; border-radius: 10px; background: #fefcf8; resize: vertical; min-height: 50px; font-family: inherit;"></textarea>`;
-        html += `</div>`;
-        
-        html += `</div></div>`;
+        html += `<div class="campo-ubicacion" id="ubicacion-${mod.id}" style="display:none; margin-top:10px;">`;
+        html += `<textarea placeholder="Notas generales de este diagnóstico..." rows="2"></textarea>`;
+        html += `</div></div></div>`;
     });
-    
     contenedor.innerHTML = html;
 }
 
-
-function toggleAcordeon(idModulo) {
-    const modulo = document.getElementById(idModulo);
-    const flecha = document.getElementById('flecha-' + idModulo);
-    
-    if (modulo.style.display === "block") {
-        modulo.style.display = "none";
-        flecha.innerHTML = "►";
+function toggleAcordeon(id) {
+    const el = document.getElementById(id);
+    const flecha = document.getElementById(`flecha-${id}`);
+    if (el.style.display === 'block') {
+        el.style.display = 'none';
+        flecha.innerHTML = '►';
     } else {
-        modulo.style.display = "block";
-        flecha.innerHTML = "▼";
+        el.style.display = 'block';
+        flecha.innerHTML = '▼';
     }
 }
 
-function seleccionarBoton(elemento, esMultiple) {
-    const contenedorBotones = elemento.parentNode;
-    const todosLosBotones = contenedorBotones.children;
-    
-    if (!esMultiple) {
-        for (let i = 0; i < todosLosBotones.length; i++) {
-            todosLosBotones[i].classList.remove('activo');
-        }
-        elemento.classList.add('activo');
+function seleccionarBoton(btn, multiple) {
+    const grupo = btn.closest('.grid-botones');
+    if (!multiple) {
+        grupo.querySelectorAll('.btn-opcion').forEach(b => b.classList.remove('activo'));
+        btn.classList.add('activo');
     } else {
-        if (elemento.classList.contains('activo')) {
-            elemento.classList.remove('activo');
-        } else {
-            elemento.classList.add('activo');
-        }
+        btn.classList.toggle('activo');
     }
 }
 
-function toggleCampoUbicacion(idModulo) {
-    const campo = document.getElementById(`ubicacion-${idModulo}`);
-    if (campo.style.display === 'none' || campo.style.display === '') {
+function toggleCampoUbicacion(id) {
+    const campo = document.getElementById(`ubicacion-${id}`);
+    if (campo.style.display === 'none' || !campo.style.display) {
         campo.style.display = 'block';
-        // Si el acordeón estaba cerrado, lo abrimos para que se vea la nota
-        const modulo = document.getElementById(idModulo);
-        const flecha = document.getElementById('flecha-' + idModulo);
-        if (modulo.style.display === "none") {
-            modulo.style.display = "block";
-            flecha.innerHTML = "▼";
+        const modulo = document.getElementById(id);
+        if (modulo.style.display !== 'block') {
+            modulo.style.display = 'block';
+            document.getElementById(`flecha-${id}`).innerHTML = '▼';
         }
     } else {
         campo.style.display = 'none';
     }
 }
 
+function mostrarFechaActual() {
+    const hoy = new Date();
+    const fecha = `${String(hoy.getDate()).padStart(2,'0')}/${String(hoy.getMonth()+1).padStart(2,'0')}/${hoy.getFullYear()}`;
+    document.getElementById('fecha-actual').innerText = fecha;
+}
+
+// ==================== CONFIGURACIÓN Y BACKUP ====================
+function editarNombreCentro() {
+    document.getElementById('panel-ajustes').style.display = 'flex';
+}
+function cerrarAjustes() { document.getElementById('panel-ajustes').style.display = 'none'; }
+function ajustarNombreCentro() {
+    const nuevo = prompt("Nombre del centro:", document.getElementById('nombre-centro-txt').innerText);
+    if (nuevo) document.getElementById('nombre-centro-txt').innerText = nuevo.trim().toUpperCase();
+}
+function exportarBackupJSON() {
+    alert("Los datos están en la nube (Supabase). Usá la herramienta de Backup de Supabase para exportar.");
+}
+function importarBackupJSON() {
+    alert("Los datos están en la nube (Supabase). Usá la herramienta de Restore de Supabase.");
+}
+function abrirInstrucciones() { document.getElementById('panel-instrucciones').style.display = 'flex'; cerrarAjustes(); }
+function cerrarInstrucciones() { document.getElementById('panel-instrucciones').style.display = 'none'; }
+
+// ==================== INICIALIZACIÓN ====================
 window.addEventListener('DOMContentLoaded', async () => {
     generarModulos();
     mostrarFechaActual();
-    
-    await cargarPacientesDesdeSupabase();
-    
-    // Pantalla en blanco
-    pacienteActivoGlobal = null;
-    limpiarPantalla();
-    
-    // Solo actualizar la lista de pacientes (para que aparezcan en la búsqueda)
+    await cargarPacientes();
+    if (pacientesCache.length === 0) {
+        await crearFichaEnBlanco();
+    } else {
+        const ultimoPaciente = pacientesCache[pacientesCache.length - 1];
+        pacienteActivoId = ultimoPaciente.id;
+        cargarPacienteEnPantalla(ultimoPaciente);
+    }
     actualizarListaPacientes();
     
-    // Configurar buscador
     const buscador = document.getElementById('buscador-input');
     const btnLupa = document.getElementById('btn-lupa');
     const panelLista = document.getElementById('panel-lista-pacientes');
-    
-    if (buscador) {
-        buscador.addEventListener('input', () => {
-            if (panelLista.style.display === 'block') {
-                actualizarListaPacientes(buscador.value);
-            }
-        });
-        buscador.addEventListener('focus', () => {
+    buscador.addEventListener('input', () => {
+        if (panelLista.style.display === 'block') actualizarListaPacientes(buscador.value);
+    });
+    buscador.addEventListener('focus', () => {
+        actualizarListaPacientes(buscador.value);
+        panelLista.style.display = 'block';
+    });
+    btnLupa.addEventListener('click', () => {
+        if (panelLista.style.display === 'block') panelLista.style.display = 'none';
+        else {
             actualizarListaPacientes(buscador.value);
             panelLista.style.display = 'block';
-        });
-    }
-    
-    if (btnLupa) {
-        btnLupa.addEventListener('click', () => {
-            if (panelLista.style.display === 'block') {
-                panelLista.style.display = 'none';
-            } else {
-                actualizarListaPacientes(buscador?.value || '');
-                panelLista.style.display = 'block';
-            }
-        });
-    }
-    
-    document.addEventListener('click', (e) => {
-        if (panelLista && !panelLista.contains(e.target) && 
-            !buscador?.contains(e.target) && !btnLupa?.contains(e.target)) {
-            panelLista.style.display = 'none';
         }
     });
+    document.addEventListener('click', (e) => {
+        if (panelLista && !panelLista.contains(e.target) && !buscador.contains(e.target) && !btnLupa.contains(e.target))
+            panelLista.style.display = 'none';
+    });
 });
-
-function abrirInstrucciones() {
-    document.getElementById('panel-instrucciones').style.display = 'flex';
-    cerrarAjustes();
-}
-
-function cerrarInstrucciones() {
-    document.getElementById('panel-instrucciones').style.display = 'none';
-}
-
-
 </script>
 
-<!-- VENTANA MODAL DE INSTRUCCIONES (solo lectura) -->
+<!-- VENTANAS MODALES -->
 <div id="panel-instrucciones" class="modal-ajustes" onclick="if(event.target===this) cerrarInstrucciones();">
     <div class="modal-ajustes-contenido" style="max-width: 500px; text-align: left;">
         <h3>📖 Notas / Instrucciones</h3>
-        <div id="contenido-instrucciones" style="max-height: 60vh; overflow-y: auto; margin: 15px 0; padding-right: 8px; line-height: 1.5; color: #4a3a2a; font-size: 14px;">
-            <!-- ========================================================== -->
-            <!-- 🖊️ EDITÁ EL TEXTO DE ABAJO (SOLO ESTE BLOQUE) 🖊️ -->
-            <!-- ========================================================== -->
+        <div style="max-height: 60vh; overflow-y: auto; margin: 15px 0; padding-right: 8px; line-height: 1.5; font-size: 14px;">
             <p><strong>📌 CÓMO USAR ESTA APP:</strong></p>
-            <ul>
-                <li>Presioná <strong>"+ Nueva Ficha"</strong> para crear un paciente.</li>
-                <li>Completá sus datos personales (nombre, edad, etc.).</li>
-                <li>El paciente debe aceptar el <strong>consentimiento</strong> (obligatorio).</li>
-                <li>Completá los <strong>4 módulos de diagnóstico</strong> (Lengua, Audición, Interrogatorio, Palpación).</li>
-                <li>Podés escribir notas adicionales en cada módulo con el botón <strong>📍</strong>.</li>
-                <li>Presioná <strong>"Guardar Consulta"</strong> para registrar la sesión.</li>
-                <li>Usá la <strong>🔍 lupa</strong> para buscar y seleccionar pacientes.</li>
-                <li>El icono <strong>⏱️</strong> muestra el historial completo.</li>
-                <li>El botón <strong>"PDF Historial Completo"</strong> genera un reporte imprimible.</li>
-                <li>En <strong>⚙️ Ajustes</strong> podés exportar/importar copias de seguridad.</li>
-            </ul>
-            <p><strong>⚠️ IMPORTANTE:</strong> Los datos se guardan localmente en el navegador. Hacé backups periódicos desde Ajustes.</p>
-            <hr style="margin: 12px 0; border-color: #e8dccc;">
-            <p style="font-size: 12px; color: #8b7355; text-align: center;">📞 Ante dudas, contactá al administrador del sistema.</p>
-            <!-- ========================================================== -->
-            <!-- FIN DEL TEXTO EDITABLE -->
-            <!-- ========================================================== -->
+            <ul><li>Presioná <strong>"+ Nueva Ficha"</strong> para crear un paciente.</li>
+            <li>Completá sus datos personales (nombre, edad, etc.).</li>
+            <li>El paciente debe aceptar el <strong>consentimiento</strong> (obligatorio).</li>
+            <li>Completá los <strong>4 módulos de diagnóstico</strong>.</li>
+            <li>Podés escribir notas adicionales en cada módulo con el botón <strong>📍</strong>.</li>
+            <li>Presioná <strong>"Guardar Consulta"</strong> para registrar la sesión.</li>
+            <li>Usá la <strong>🔍 lupa</strong> para buscar y seleccionar pacientes.</li>
+            <li>El icono <strong>⏱️</strong> muestra el historial completo.</li>
+            <li>El botón <strong>"PDF Historial Completo"</strong> genera un reporte imprimible.</li></ul>
+            <hr><p style="font-size: 12px; text-align: center;">📞 Datos almacenados en la nube con Supabase.</p>
         </div>
         <button class="btn-ajuste-cerrar" onclick="cerrarInstrucciones()">Cerrar</button>
     </div>
 </div>
 
-
 <div id="panel-ajustes" class="modal-ajustes" onclick="if(event.target===this) cerrarAjustes();">
     <div class="modal-ajustes-contenido">
         <h3>⚙️ Ajustes del Sistema</h3>
-        
-	<button class="btn-ajuste-opcion" onclick="abrirInstrucciones()">
-    	    📖 Notas / Instrucciones
-	</button>
-
-        <button class="btn-ajuste-opcion" onclick="ajustarNombreCentro()">
-            🏢 Cambiar Nombre del Centro
-        </button>
-        
-        <button class="btn-ajuste-opcion" onclick="exportarBackupJSON()">
-            📥 Exportar Copia de Seguridad
-        </button>
-        
-        <button class="btn-ajuste-opcion" onclick="document.getElementById('input-archivo-backup').click();">
-            📤 Importar Copia de Seguridad
-        </button>
-        
-        <input type="file" id="input-archivo-backup" accept=".json" style="display: none;" onchange="importarBackupJSON(event)">
-        
+        <button class="btn-ajuste-opcion" onclick="abrirInstrucciones()">📖 Notas / Instrucciones</button>
+        <button class="btn-ajuste-opcion" onclick="ajustarNombreCentro()">🏢 Cambiar Nombre del Centro</button>
+        <button class="btn-ajuste-opcion" onclick="exportarBackupJSON()">📥 Exportar Copia de Seguridad</button>
+        <button class="btn-ajuste-opcion" onclick="importarBackupJSON()">📤 Importar Copia de Seguridad</button>
         <button class="btn-ajuste-cerrar" onclick="cerrarAjustes()">Cerrar</button>
     </div>
 </div>
 
 </body>
 </html>
-
