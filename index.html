@@ -202,7 +202,11 @@ margin-bottom: 2px;
 text-transform: uppercase;
 letter-spacing: 0.5px;
 }
-#motivo-consulta, #antecedentes, #evolucion, #diagnostico-general {
+#motivo-consulta,
+#antecedentes,
+#evolucion,
+#diagnostico-general {
+
 padding: 6px 8px;
 border: 1px solid #e8dccc;
 border-radius: 10px;
@@ -210,12 +214,20 @@ background-color: #fffefc;
 font-size: 13px;
 color: #4a3a2a;
 outline: none;
-min-height: 48px;
-resize: vertical;
-overflow-y: auto;
+
 width: 100%;
 font-family: inherit;
+
+min-height: 48px;
+max-height: 300px;
+
+overflow-y: auto;
+
+resize: none;
+
+transition: height 0.1s ease;
 }
+
 .notas-clinicas {
 display: flex;
 flex-direction: column;
@@ -1650,6 +1662,38 @@ window.addEventListener('DOMContentLoaded', async () => {
   await nuevaFicha();
 });
 </script>
+
+<script>
+
+function autoResizeTextarea(textarea) {
+
+    textarea.style.height = 'auto';
+
+    const nuevaAltura = Math.min(textarea.scrollHeight, 300);
+
+    textarea.style.height = nuevaAltura + 'px';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const textareas = document.querySelectorAll(
+        '#motivo-consulta, #antecedentes, #evolucion, #diagnostico-general'
+    );
+
+    textareas.forEach(textarea => {
+
+        autoResizeTextarea(textarea);
+
+        textarea.addEventListener('input', () => {
+            autoResizeTextarea(textarea);
+        });
+
+    });
+
+});
+
+</script>
+
 </body>
 </html>
 
