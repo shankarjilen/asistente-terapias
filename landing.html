@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente Clínico Holístico - Gestión Profesional</title>
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+body {
+    background-color: #fdfaf4; /* Fondo blanco hueso / zen */
+    color: #2c3e50;
+    line-height: 1.6;
+}
+.container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+/* Cabecera / Hero Section */
+.hero {
+    padding: 60px 0;
+    text-align: center;
+    background: linear-gradient(135deg, #fbf6eb 0%, #f5ede0 100%);
+    border-bottom: 1px solid #e8dccc;
+}
+.hero h1 {
+    font-size: 32px;
+    color: #553c2f;
+    font-weight: 800;
+    margin-bottom: 15px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.hero p {
+    font-size: 18px;
+    color: #7d6552;
+    max-width: 700px;
+    margin: 0 auto 30px auto;
+}
+/* Formulario de Captura */
+.form-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(100, 70, 40, 0.06);
+    border-top: 4px solid #7eb09e; /* Detalle Verde Jade */
+    max-width: 550px;
+    margin: 0 auto;
+}
+.form-text {
+    font-size: 14px;
+    color: #6b4c3a;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+.form-group {
+    display: flex;
+    gap: 10px;
+}
+.form-group input {
+    flex: 1;
+    padding: 14px 15px;
+    border: 2px solid #e8dccc;
+    border-radius: 12px;
+    font-size: 15px;
+    outline: none;
+    background: #fefcf8;
+}
+.form-group input:focus {
+    border-color: #7eb09e;
+}
+.btn-submit {
+    background-color: #7eb09e; /* Verde Jade */
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.btn-submit:hover {
+    background-color: #6b9a86;
+    transform: translateY(-1px);
+}
+/* Sección de Video */
+.video-section {
+    padding: 60px 0;
+    text-align: center;
+}
+.video-container {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 8px solid #e8dccc; /* Simulación de marco de dispositivo */
+    border-radius: 24px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    aspect-ratio: 16 / 9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #8b7355;
+    font-style: italic;
+    position: relative;
+    overflow: hidden;
+}
+/* Sección de Características */
+.features-section {
+    padding: 40px 0 60px 0;
+    background-color: #f9f3e6;
+    border-top: 1px solid #e8dccc;
+    border-bottom: 1px solid #e8dccc;
+}
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-top: 20px;
+}
+.feature-card {
+    background: #ffffff;
+    padding: 30px 20px;
+    border-radius: 18px;
+    border: 1px solid #e8dccc;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    text-align: center;
+}
+.feature-icon {
+    font-size: 32px;
+    margin-bottom: 15px;
+    display: inline-block;
+}
+.feature-card h3 {
+    font-size: 18px;
+    color: #553c2f;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+.feature-card p {
+    font-size: 14px;
+    color: #6b5545;
+}
+/* Cierre / Footer CTA */
+.footer-cta {
+    padding: 60px 0;
+    text-align: center;
+}
+.footer-cta h2 {
+    font-size: 24px;
+    color: #553c2f;
+    margin-bottom: 25px;
+}
+.footer-rights {
+    margin-top: 40px;
+    font-size: 12px;
+    color: #b8a07c;
+    border-top: 1px dashed #e8dccc;
+    padding-top: 20px;
+}
+/* Adaptación para Celulares */
+@media (max-width: 768px) {
+    .hero h1 { font-size: 24px; }
+    .hero p { font-size: 15px; }
+    .form-group { flex-direction: column; }
+    .btn-submit { width: 100%; text-align: center; }
+    .features-grid { grid-template-columns: 1fr; gap: 20px; }
+    .video-container { border-width: 4px; border-radius: 14px; }
+}
+</style>
+</head>
+<body>
+
+    <!-- 1. BLOQUE DE BIENVENIDA / HERO -->
+    <section class="hero">
+        <div class="container">
+            <h1>Gestiona tus fichas clínicas en un par de clics desde cualquier dispositivo</h1>
+            <p>Olvídate de los papeles y los tachones. Registra datos personales, antecedentes y la evolución de tus pacientes con una fluidez diseñada para tu consulta.</p>
+            
+            <!-- Formulario Principal -->
+            <div class="form-container">
+                <p class="form-text">El asistente diseñado para terapeutas que buscan orden y fluidez. Completa tus datos para recibir tu código de acceso profesional y comenzar de inmediato.</p>
+                <form onsubmit="event.preventDefault(); alert('¡Gracias! Pronto recibirás tu código de acceso profesional.');">
+                    <div class="form-group">
+                        <input type="email" placeholder="Tu correo electrónico profesional" required>
+                        <button type="submit" class="btn-submit">Solicitar mi acceso profesional</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. BLOQUE DE DEMOSTRACIÓN VISUAL (VIDEO) -->
+    <section class="video-section">
+        <div class="container">
+            <!-- Espacio reservado para el video de 1 minuto -->
+            <div class="video-container">
+                <div>
+                    <span style="font-size: 40px; display:block; margin-bottom:10px;">📱</span>
+                    <strong>[ Espacio para el Video Demostrativo de 1 Minuto ]</strong>
+                    <p style="font-size:13px; margin-top:5px; color:#a08a70;">Aquí se mostrará de forma rápida la fluidez del sistema en acción</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. BLOQUE DE CARACTERÍSTICAS CLAVE -->
+    <section class="features-section">
+        <div class="container">
+            <div class="features-grid">
+                <!-- Tarjeta 1 -->
+                <div class="feature-card">
+                    <span class="feature-icon">📝</span>
+                    <h3>Fichas Ágiles</h3>
+                    <p>Datos personales, motivos de consulta y antecedentes almacenados en un formato libre, rápido y dinámico.</p>
+                </div>
+                <!-- Tarjeta 2 -->
+                <div class="feature-card">
+                    <span class="feature-icon">🪷</span>
+                    <h3>Diagnóstico Visual</h3>
+                    <p>Olvídate de escribir siempre lo mismo. Registra signos y síntomas seleccionando elementos con un toque en segundos.</p>
+                </div>
+                <!-- Tarjeta 3 -->
+                <div class="feature-card">
+                    <span class="feature-icon">⏱️</span>
+                    <h3>Historial al Instante</h3>
+                    <p>Accede al histórico de evolución clínica de tus pacientes con un clic y genera reportes en PDF de forma automática.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. BLOQUE DE CIERRE -->
+    <section class="footer-cta">
+        <div class="container">
+            <h2>¿Listo para transformar la organización de tu consulta?</h2>
+            
+            <!-- Formulario Secundario de Cierre -->
+            <div class="form-container">
+                <p class="form-text">Introduce tu correo para obtener tu código de acceso y comenzar a usar la aplicación de inmediato.</p>
+                <form onsubmit="event.preventDefault(); alert('¡Gracias! Pronto recibirás tu código de acceso profesional.');">
+                    <div class="form-group">
+                        <input type="email" placeholder="Tu correo electrónico profesional" required>
+                        <button type="submit" class="btn-submit">Solicitar mi acceso profesional</button>
+                    </div>
+                </form>
+            </div>
+
+            <p class="footer-rights">Asistente Clínico Holístico © 2026. Todos los derechos reservados. Tus datos viajan cifrados y seguros en la nube.</p>
+        </div>
+    </section>
+
+</body>
+</html>
