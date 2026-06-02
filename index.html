@@ -202,30 +202,28 @@ margin-bottom: 2px;
 text-transform: uppercase;
 letter-spacing: 0.5px;
 }
+
 #motivo-consulta,
 #antecedentes,
 #evolucion,
 #diagnostico-general {
-
-padding: 6px 8px;
-border: 1px solid #e8dccc;
-border-radius: 10px;
-background-color: #fffefc;
-font-size: 13px;
-color: #4a3a2a;
-outline: none;
-
-width: 100%;
-font-family: inherit;
-
-min-height: 48px;
-max-height: 300px;
-
-overflow-y: auto;
-
-resize: none;
-
-transition: height 0.1s ease;
+  padding: 6px 8px;
+  border: 1px solid #e8dccc;
+  border-radius: 10px;
+  background-color: #fffefc;
+  font-size: 13px;
+  color: #4a3a2a;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  min-height: 48px;
+  max-height: 300px;
+  overflow-y: auto;
+  resize: none;
+  transition: height 0.1s ease;
+  
+  /* 🔥 ESTA ES LA LÍNEA MÁGICA PARA UN SCROLL SUAVE Y TÁCTIL EN CELULARES 🔥 */
+  -webkit-overflow-scrolling: touch;
 }
 
 .notas-clinicas {
