@@ -813,27 +813,54 @@ const supabaseCliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON
 
 let terapeutaLogueado = null;
 
+
 async function probarLevantarCortina() {
   const inputCodigo = document.getElementById('codigo-terapeuta-input').value.trim();
   if (inputCodigo === "") { alert("Por favor, introduce tu código de acceso."); return; }
   try {
-    const { data, error } = await supabaseCliente
-  .from('terapeutas')
-  .select('*')
-  .eq('codigo', inputCodigo)
-  .eq('activo', true); // <--- ESTA ES LA LÍNEA QUE AGREGAMOS
-    if (error) throw error;
-    if (!data || data.length === 0) { alert("Código de acceso incorrecto. Por favor, verifica e intenta nuevamente."); return; }
-    terapeutaLogueado = data[0];
+
+    // 1. Buscamos al terapeuta por su código corto (ej: "DANIEL")
+    const { data: tablaData, error: tablaError } = await supabaseCliente
+      .from('terapeutas')
+      .select('*')
+      .eq('codigo', inputCodigo)
+      .eq('activo', true);
+
+    if (tablaError) throw tablaError;
+    if (!tablaData || tablaData.length === 0) { 
+      alert("Código de acceso incorrecto. Por favor, verifica e intenta nuevamente."); 
+      return; 
+    }
+
+    // CORRECCIÓN: Agregamos [0] para extraer la primera fila válida encontrada
+    const datosTerapeuta = tablaData[0]; 
+
+    // 2. Autenticación oficial en Supabase por detrás para activar el RLS (Lupa)
+    const { data: authData, error: authError } = await supabaseCliente.auth.signInWithPassword({
+      email: datosTerapeuta.email,
+      password: datosTerapeuta.password_plano
+    });
+
+    if (authError) {
+      console.error("Error de autenticación interna:", authError);
+      alert("Error de validación de seguridad. Contacte al administrador.");
+      return;
+    }
+
+    // 3. Todo salió bien: Mantenemos tu flujo original intacto
+    terapeutaLogueado = datosTerapeuta;
     const proximoNro = await obtenerSiguienteNroFicha();
     document.getElementById('nro-ficha').innerText = proximoNro;
     refrescarHeaderTerapeuta();
     document.getElementById('pantalla-login').style.display = 'none';
+
   } catch (error) {
     console.error("Error al validar el terapeuta:", error);
     alert("Ocurrió un error al conectar con el sistema. Intenta de nuevo.");
   }
 }
+
+
 
 // ── CAMBIO 1: variable global unificada como pacienteActivoId (I mayúscula) ──
 let pacienteActivo = null;
@@ -885,6 +912,7 @@ const modulos = [
     ]
   }
 ];
+
 
 function mostrarEstadoConexion(online) {
   const estadoDiv = document.getElementById('conexion-estado');
@@ -1694,6 +1722,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
 
 
 
