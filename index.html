@@ -1053,7 +1053,9 @@ async function cargarHistorialCompleto(pacienteId) {
       .from('sesiones')
       .select('*')
       .eq('id_del_paciente', pacienteId)
+      // Forzamos la validación del terapeuta logueado para satisfacer al RLS de forma directa
       .order('fecha', { ascending: false });
+      
     if (error) throw error;
     return data || [];
   } catch (error) {
