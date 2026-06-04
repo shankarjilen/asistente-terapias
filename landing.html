@@ -42,7 +42,7 @@ body {
     text-align: left;
 }
 .app-brand {
-    font-size: 42px; /* Más grande, con peso y presencia */
+    font-size: 42px;
     font-weight: 800;
     color: #4a3328;
     margin-bottom: 12px;
@@ -63,15 +63,14 @@ body {
     margin-bottom: 35px;
 }
 
-/* Formulario Modernizado y Premium */
+/* Formulario */
 .form-container {
     background: #ffffff;
     padding: 28px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(85, 60, 47, 0.06);
-    border-top: 4px solid #629984; /* Jade más integrado */
+    border-top: 4px solid #629984;
     max-width: 480px;
-    transition: transform 0.3s ease;
 }
 .form-text {
     font-size: 15px;
@@ -106,7 +105,7 @@ body {
     box-shadow: 0 0 0 4px rgba(98, 153, 132, 0.1);
 }
 .btn-submit {
-    background-color: #629984; /* Verde Esmeralda Jade vivo */
+    background-color: #629984;
     color: white;
     border: none;
     padding: 14px 24px;
@@ -184,7 +183,7 @@ body {
     line-height: 1.4;
 }
 
-/* Rediseño de la Sección de Características */
+/* Sección de Características */
 .features-section {
     padding: 70px 0;
     background-color: #f7ede1;
@@ -201,9 +200,10 @@ body {
     padding: 35px 25px;
     border-radius: 18px;
     border: 1px solid #e8decb;
-    text-align: left; /* Alineación a la izquierda más moderna */
+    text-align: left;
     box-shadow: 0 6px 18px rgba(85, 60, 47, 0.03);
     transition: all 0.3s ease;
+    cursor: pointer; /* Indica que se puede hacer clic */
 }
 .feature-card:hover {
     transform: translateY(-5px);
@@ -236,6 +236,71 @@ body {
     line-height: 1.5;
 }
 
+/* Ventana Flotante (Lightbox) */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(42, 30, 24, 0.85); /* Fondo oscuro cálido */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+    padding: 20px;
+}
+.lightbox-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.lightbox-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 85vh;
+    background: #fdfaf4;
+    padding: 12px;
+    border-radius: 24px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+.lightbox-overlay.active .lightbox-content {
+    transform: scale(1);
+}
+.lightbox-img {
+    max-width: 100%;
+    max-height: 75vh;
+    display: block;
+    border-radius: 14px;
+    object-fit: contain;
+}
+.lightbox-close {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 40px;
+    height: 40px;
+    background-color: #629984;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: background 0.2s;
+}
+.lightbox-close:hover {
+    background-color: #4e7d6b;
+}
+
 /* Footer CTA */
 .footer-cta {
     padding: 70px 0;
@@ -264,6 +329,7 @@ body {
     .features-grid { grid-template-columns: 1fr; gap: 25px; }
     .feature-card { text-align: center; }
     .feature-icon-container { margin: 0 auto 20px auto; }
+    .lightbox-close { top: 10px; right: 10px; background-color: rgba(0,0,0,0.5); }
 }
 </style>
 </head>
@@ -316,7 +382,7 @@ body {
         <div class="container">
             <div class="features-grid">
                 <!-- Tarjeta 1 -->
-                <div class="feature-card">
+                <div class="feature-card" data-img="img/paso2.jpg">
                     <div class="feature-icon-container">
                         <span class="feature-icon">📝</span>
                     </div>
@@ -324,7 +390,7 @@ body {
                     <p>Datos personales, motivos de consulta y antecedentes almacenados en un formato libre, rápido y dinámico.</p>
                 </div>
                 <!-- Tarjeta 2 -->
-                <div class="feature-card">
+                <div class="feature-card" data-img="img/paso4.jpg">
                     <div class="feature-icon-container">
                         <span class="feature-icon">🪷</span>
                     </div>
@@ -332,7 +398,7 @@ body {
                     <p>Olvídate de escribir siempre lo mismo. Registra signos y síntomas seleccionando elementos con un toque en segundos.</p>
                 </div>
                 <!-- Tarjeta 3 -->
-                <div class="feature-card">
+                <div class="feature-card" data-img="img/paso5.jpg">
                     <div class="feature-icon-container">
                         <span class="feature-icon">⏱️</span>
                     </div>
@@ -362,22 +428,56 @@ body {
         </div>
     </section>
 
-    <!-- Lógica Interactiva Manual -->
+    <!-- ESTRUCTURA DE LA VENTANA FLOTANTE -->
+    <div class="lightbox-overlay" id="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" id="lightbox-close">✕</button>
+            <img src="" alt="Vista ampliada" class="lightbox-img" id="lightbox-img">
+        </div>
+    </div>
+
+    <!-- Lógicas de Funcionamiento -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // 1. Lógica del Celular
         const slides = document.querySelectorAll('.slide');
         const caption = document.getElementById('carousel-caption');
         const clicker = document.getElementById('phone-clicker');
         let currentIndex = 0;
 
-        if(slides.length === 0) return;
+        if(slides.length > 0) {
+            clicker.addEventListener("click", function() {
+                slides[currentIndex].classList.remove('active');
+                currentIndex = (currentIndex + 1) % slides.length;
+                slides[currentIndex].classList.add('active');
+                caption.innerText = slides[currentIndex].getAttribute('data-text');
+            });
+        }
 
-        clicker.addEventListener("click", function() {
-            slides[currentIndex].classList.remove('active');
-            currentIndex = (currentIndex + 1) % slides.length;
-            slides[currentIndex].classList.add('active');
-            
-            caption.innerText = slides[currentIndex].getAttribute('data-text');
+        // 2. Lógica de la Ventana Flotante (Lightbox)
+        const cards = document.querySelectorAll('.feature-card');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxClose = document.getElementById('lightbox-close');
+
+        cards.forEach(card => {
+            card.addEventListener('click', function() {
+                const imageSrc = this.getAttribute('data-img');
+                lightboxImg.setAttribute('src', imageSrc);
+                lightbox.classList.add('active');
+            });
+        });
+
+        // Cerrar al darle a la X
+        lightboxClose.addEventListener('click', function() {
+            lightbox.classList.remove('active');
+        });
+
+        // Cerrar al darle al fondo oscuro
+        lightbox.addEventListener('click', function(e) {
+            if(e.target === lightbox) {
+                lightbox.classList.remove('active');
+            }
         });
     });
     </script>
