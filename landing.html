@@ -12,7 +12,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 body {
-    background-color: #fdfaf4; /* Fondo blanco hueso / zen */
+    background-color: #fdfaf4;
     color: #2c3e50;
     line-height: 1.6;
 }
@@ -24,7 +24,7 @@ body {
 }
 /* Cabecera / Hero Section */
 .hero {
-    padding: 60px 0;
+    padding: 50px 0;
     text-align: center;
     background: linear-gradient(135deg, #fbf6eb 0%, #f5ede0 100%);
     border-bottom: 1px solid #e8dccc;
@@ -33,25 +33,25 @@ body {
     font-size: 32px;
     color: #553c2f;
     font-weight: 800;
-    margin-bottom: 15px;
-    max-width: 800px;
+    margin-bottom: 12px;
+    max-width: 750px;
     margin-left: auto;
     margin-right: auto;
 }
 .hero p {
-    font-size: 18px;
+    font-size: 16px;
     color: #7d6552;
-    max-width: 700px;
-    margin: 0 auto 30px auto;
+    max-width: 650px;
+    margin: 0 auto 25px auto;
 }
-/* Formulario de Captura */
+/* Formulario de Captura Estilizado y Compacto */
 .form-container {
     background: #ffffff;
-    padding: 25px;
-    border-radius: 20px;
-    box-shadow: 0 8px 24px rgba(100, 70, 40, 0.06);
-    border-top: 4px solid #7eb09e; /* Detalle Verde Jade */
-    max-width: 550px;
+    padding: 20px 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(100, 70, 40, 0.05);
+    border-top: 4px solid #7eb09e;
+    max-width: 500px;
     margin: 0 auto;
 }
 .form-text {
@@ -59,6 +59,7 @@ body {
     color: #6b4c3a;
     font-weight: 600;
     margin-bottom: 15px;
+    line-height: 1.4;
 }
 .form-group {
     display: flex;
@@ -66,10 +67,10 @@ body {
 }
 .form-group input {
     flex: 1;
-    padding: 14px 15px;
+    padding: 12px 15px;
     border: 2px solid #e8dccc;
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 10px;
+    font-size: 14px;
     outline: none;
     background: #fefcf8;
 }
@@ -77,12 +78,12 @@ body {
     border-color: #7eb09e;
 }
 .btn-submit {
-    background-color: #7eb09e; /* Verde Jade */
+    background-color: #7eb09e;
     color: white;
     border: none;
-    padding: 14px 24px;
-    border-radius: 12px;
-    font-size: 15px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
     cursor: pointer;
     font-weight: bold;
     transition: all 0.2s;
@@ -90,27 +91,31 @@ body {
 }
 .btn-submit:hover {
     background-color: #6b9a86;
-    transform: translateY(-1px);
-}
-/* Sección de Video / Carrusel */
-.video-section {
-    padding: 60px 0;
-    text-align: center;
 }
 
-/* ==========================================
-   NUEVOS ESTILOS DEL CARRUSEL TIPO CELULAR 
-   ========================================== */
+/* Sección de Teléfono / Interactiva */
+.video-section {
+    padding: 50px 0;
+    text-align: center;
+}
+.phone-instruction {
+    font-size: 13px;
+    color: #8c7361;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+/* Tamaño ampliado del celular para mejor lectura */
 .phone-mockup {
-    width: 280px;
-    height: 560px;
+    width: 340px;
+    height: 680px;
     margin: 0 auto;
     border: 12px solid #553c2f;
-    border-radius: 36px;
+    border-radius: 40px;
     background: #000;
-    box-shadow: 0 12px 32px rgba(100, 70, 40, 0.15);
+    box-shadow: 0 12px 32px rgba(100, 70, 40, 0.12);
     position: relative;
     overflow: hidden;
+    cursor: pointer; /* Mano indicando que es cliqueable */
 }
 .phone-screen {
     width: 100%;
@@ -126,7 +131,7 @@ body {
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 0.8s ease-in-out;
+    transition: opacity 0.4s ease-in-out;
 }
 .slide.active {
     opacity: 1;
@@ -140,9 +145,9 @@ body {
     padding: 0 20px;
 }
 
-/* Sección de Características */
+/* Características */
 .features-section {
-    padding: 40px 0 60px 0;
+    padding: 50px 0;
     background-color: #f9f3e6;
     border-top: 1px solid #e8dccc;
     border-bottom: 1px solid #e8dccc;
@@ -151,40 +156,38 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 25px;
-    margin-top: 20px;
 }
 .feature-card {
     background: #ffffff;
-    padding: 30px 20px;
-    border-radius: 18px;
+    padding: 25px 20px;
+    border-radius: 14px;
     border: 1px solid #e8dccc;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     text-align: center;
 }
 .feature-icon {
-    font-size: 32px;
-    margin-bottom: 15px;
+    font-size: 28px;
+    margin-bottom: 12px;
     display: inline-block;
 }
 .feature-card h3 {
-    font-size: 18px;
+    font-size: 17px;
     color: #553c2f;
-    margin-bottom: 12px;
-    font-weight: 700;
+    margin-bottom: 10px;
 }
 .feature-card p {
-    font-size: 14px;
+    font-size: 13.5px;
     color: #6b5545;
 }
-/* Cierre / Footer CTA */
+
+/* Footer CTA */
 .footer-cta {
-    padding: 60px 0;
+    padding: 50px 0;
     text-align: center;
 }
 .footer-cta h2 {
-    font-size: 24px;
+    font-size: 22px;
     color: #553c2f;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 .footer-rights {
     margin-top: 40px;
@@ -194,19 +197,17 @@ body {
     padding-top: 20px;
 }
 
-/* Adaptación para Celulares (SIEMPRE AL FINAL) */
 @media (max-width: 768px) {
     .hero h1 { font-size: 24px; }
-    .hero p { font-size: 15px; }
     .form-group { flex-direction: column; }
-    .btn-submit { width: 100%; text-align: center; }
-    .features-grid { grid-template-columns: 1fr; gap: 20px; }
-    .phone-mockup { width: 240px; height: 480px; border-width: 8px; border-radius: 28px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .phone-mockup { width: 280px; height: 560px; }
 }
 </style>
 </head>
 <body>
 
+    <!-- 1. BLOQUE DE BIENVENIDA -->
     <section class="hero">
         <div class="container">
             <h1>Gestiona tus fichas clínicas en un par de clics desde cualquier dispositivo</h1>
@@ -224,9 +225,11 @@ body {
         </div>
     </section>
 
+    <!-- 2. CARRUSEL MANUAL EN CELULAR AMPLIADO -->
     <section class="video-section">
         <div class="container">
-            <div class="phone-mockup">
+            <p class="phone-instruction">✨ Haz clic sobre la pantalla del celular para pasar al siguiente paso</p>
+            <div class="phone-mockup" id="phone-clicker">
                 <div class="phone-screen">
                     <img src="img/paso1.jpg" class="slide active" data-text="Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.">
                     <img src="img/paso2.jpg" class="slide" data-text="Paso 2: Crea una nueva ficha clínica para tu paciente en un clic.">
@@ -240,6 +243,7 @@ body {
         </div>
     </section>
 
+    <!-- 3. BLOQUE DE CARACTERÍSTICAS -->
     <section class="features-section">
         <div class="container">
             <div class="features-grid">
@@ -262,6 +266,7 @@ body {
         </div>
     </section>
 
+    <!-- 4. BLOQUE DE CIERRE -->
     <section class="footer-cta">
         <div class="container">
             <h2>¿Listo para transformar la organización de tu consulta?</h2>
@@ -280,21 +285,23 @@ body {
         </div>
     </section>
 
+    <!-- Nueva Lógica Interactiva por Clic -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         const slides = document.querySelectorAll('.slide');
         const caption = document.getElementById('carousel-caption');
+        const clicker = document.getElementById('phone-clicker');
         let currentIndex = 0;
 
-        setInterval(() => {
-            if(slides.length === 0) return;
-            
+        if(slides.length === 0) return;
+
+        clicker.addEventListener("click", function() {
             slides[currentIndex].classList.remove('active');
             currentIndex = (currentIndex + 1) % slides.length;
             slides[currentIndex].classList.add('active');
             
             caption.innerText = slides[currentIndex].getAttribute('data-text');
-        }, 3000);
+        });
     });
     </script>
 
