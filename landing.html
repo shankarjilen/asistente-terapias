@@ -18,48 +18,63 @@ body {
 }
 .container {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
 }
-/* Cabecera / Hero Section */
-.hero {
-    padding: 50px 0;
-    text-align: center;
+
+/* Rediseño Estructural: Todo en una sola pantalla principal */
+.main-hero {
+    padding: 40px 0;
     background: linear-gradient(135deg, #fbf6eb 0%, #f5ede0 100%);
     border-bottom: 1px solid #e8dccc;
 }
-.hero h1 {
-    font-size: 32px;
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 40px;
+    align-items: center;
+}
+
+/* Columna Izquierda: Textos y Formulario */
+.hero-left {
+    text-align: left;
+}
+.app-brand {
+    font-size: 16px;
+    font-weight: 700;
+    color: #7eb09e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+.hero-left h1 {
+    font-size: 36px;
     color: #553c2f;
     font-weight: 800;
-    margin-bottom: 12px;
-    max-width: 750px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-bottom: 15px;
+    line-height: 1.2;
 }
-.hero p {
+.hero-left p {
     font-size: 16px;
     color: #7d6552;
-    max-width: 650px;
-    margin: 0 auto 25px auto;
+    margin-bottom: 30px;
 }
-/* Formulario de Captura Estilizado y Compacto */
+
+/* Formulario Compacto */
 .form-container {
     background: #ffffff;
-    padding: 20px 30px;
+    padding: 25px;
     border-radius: 16px;
     box-shadow: 0 6px 20px rgba(100, 70, 40, 0.05);
     border-top: 4px solid #7eb09e;
-    max-width: 500px;
-    margin: 0 auto;
+    max-width: 480px;
 }
 .form-text {
-    font-size: 14px;
+    font-size: 15px;
     color: #6b4c3a;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 15px;
-    line-height: 1.4;
 }
 .form-group {
     display: flex;
@@ -93,29 +108,27 @@ body {
     background-color: #6b9a86;
 }
 
-/* Sección de Teléfono / Interactiva */
-.video-section {
-    padding: 50px 0;
+/* Columna Derecha: Celular Integrado (Sin cortarse) */
+.hero-right {
     text-align: center;
 }
 .phone-instruction {
-    font-size: 13px;
+    font-size: 12px;
     color: #8c7361;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     font-style: italic;
 }
-/* Tamaño ampliado del celular para mejor lectura */
 .phone-mockup {
-    width: 340px;
-    height: 680px;
+    width: 290px;
+    height: 580px;
     margin: 0 auto;
-    border: 12px solid #553c2f;
-    border-radius: 40px;
+    border: 10px solid #553c2f;
+    border-radius: 36px;
     background: #000;
     box-shadow: 0 12px 32px rgba(100, 70, 40, 0.12);
     position: relative;
     overflow: hidden;
-    cursor: pointer; /* Mano indicando que es cliqueable */
+    cursor: pointer;
 }
 .phone-screen {
     width: 100%;
@@ -131,18 +144,19 @@ body {
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 0.4s ease-in-out;
+    transition: opacity 0.3s ease-in-out;
 }
 .slide.active {
     opacity: 1;
 }
 .carousel-text {
-    margin-top: 20px;
-    font-size: 16px;
+    margin-top: 15px;
+    font-size: 14px;
     color: #553c2f;
     font-weight: 600;
-    min-height: 48px;
-    padding: 0 20px;
+    min-height: 40px;
+    padding: 0 10px;
+    line-height: 1.4;
 }
 
 /* Características */
@@ -197,53 +211,60 @@ body {
     padding-top: 20px;
 }
 
-@media (max-width: 768px) {
-    .hero h1 { font-size: 24px; }
-    .form-group { flex-direction: column; }
+/* Adaptación Móvil */
+@media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 30px; }
+    .hero-left { text-align: center; }
+    .form-container { margin: 0 auto; }
     .features-grid { grid-template-columns: 1fr; }
-    .phone-mockup { width: 280px; height: 560px; }
 }
 </style>
 </head>
 <body>
 
-    <!-- 1. BLOQUE DE BIENVENIDA -->
-    <section class="hero">
+    <!-- BLOQUE PRINCIPAL (HERO) -->
+    <section class="main-hero">
         <div class="container">
-            <h1>Gestiona tus fichas clínicas en un par de clics desde cualquier dispositivo</h1>
-            <p>Olvídate de los papeles y los tachones. Registra datos personales, antecedentes y la evolución de tus pacientes con una fluidez diseñada para tu consulta.</p>
-            
-            <div class="form-container">
-                <p class="form-text">El asistente diseñado para terapeutas que buscan orden y fluidez. Completa tus datos para recibir tu código de acceso profesional y comenzar de inmediato.</p>
-                <form action="AQUÍ_VA_TU_ENLACE_DE_FORMSPREE" method="POST">
-                    <div class="form-group">
-                        <input type="email" name="email" placeholder="Tu correo electrónico profesional" required>
-                        <button type="submit" class="btn-submit">Solicitar mi acceso profesional</button>
+            <div class="hero-grid">
+                
+                <!-- IZQUIERDA: Textos y Captura de Mail -->
+                <div class="hero-left">
+                    <div class="app-brand">Asistente Clínico Holístico</div>
+                    <h1>Gestiona tus fichas clínicas en un par de clics desde cualquier dispositivo</h1>
+                    <p>Olvídate de los papeles y los tachones. Registra datos personales, antecedentes y la evolución de tus pacientes con una fluidez diseñada para tu consulta.</p>
+                    
+                    <div class="form-container">
+                        <p class="form-text">Solicita 15 días de prueba</p>
+                        <form action="AQUÍ_VA_TU_ENLACE_DE_FORMSPREE" method="POST">
+                            <div class="form-group">
+                                <input type="email" name="email" placeholder="Tu correo electrónico profesional" required>
+                                <button type="submit" class="btn-submit">Comenzar prueba gratis</button>
+                            </div>
+                        </form>
                     </div>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- 2. CARRUSEL MANUAL EN CELULAR AMPLIADO -->
-    <section class="video-section">
-        <div class="container">
-            <p class="phone-instruction">✨ Haz clic sobre la pantalla del celular para pasar al siguiente paso</p>
-            <div class="phone-mockup" id="phone-clicker">
-                <div class="phone-screen">
-                    <img src="img/paso1.jpg" class="slide active" data-text="Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.">
-                    <img src="img/paso2.jpg" class="slide" data-text="Paso 2: Crea una nueva ficha clínica para tu paciente en un clic.">
-                    <img src="img/paso3.jpg" class="slide" data-text="Paso 3: Registra el motivo de consulta de forma rápida.">
-                    <img src="img/paso4.jpg" class="slide" data-text="Paso 4: Selecciona los signos y síntomas visuales al instante.">
-                    <img src="img/paso5.jpg" class="slide" data-text="Paso 5: Guarda la evolución de la sesión actual de manera fluida.">
-                    <img src="img/paso6.jpg" class="slide" data-text="Paso 6: Accede al historial completo y genera reportes en PDF.">
                 </div>
+
+                <!-- DERECHA: Celular Interactuable (Rutas img/) -->
+                <div class="hero-right">
+                    <p class="phone-instruction">✨ Haz clic en la pantalla para avanzar</p>
+                    <div class="phone-mockup" id="phone-clicker">
+                        <div class="phone-screen">
+                            <img src="img/paso1.jpg" class="slide active" data-text="Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.">
+                            <img src="img/paso2.jpg" class="slide" data-text="Paso 2: Crea una nueva ficha clínica para tu paciente en un clic.">
+                            <img src="img/paso3.jpg" class="slide" data-text="Paso 3: Registra el motivo de consulta de forma rápida.">
+                            <img src="img/paso4.jpg" class="slide" data-text="Paso 4: Selecciona los signos y síntomas visuales al instante.">
+                            <img src="img/paso5.jpg" class="slide" data-text="Paso 5: Visualiza la evolución de las sesiones de manera fluida.">
+                            <img src="img/paso6.jpg" class="slide" data-text="Paso 6: Accede al historial completo y genera reportes en PDF.">
+                        </div>
+                    </div>
+                    <div class="carousel-text" id="carousel-caption">Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.</div>
+                </div>
+
             </div>
-            <div class="carousel-text" id="carousel-caption">Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.</div>
         </div>
     </section>
 
-    <!-- 3. BLOQUE DE CARACTERÍSTICAS -->
+    <!-- SECCIÓN DE CARACTERÍSTICAS -->
     <section class="features-section">
         <div class="container">
             <div class="features-grid">
@@ -266,17 +287,17 @@ body {
         </div>
     </section>
 
-    <!-- 4. BLOQUE DE CIERRE -->
+    <!-- BLOQUE DE CIERRE (CTA INFERIOR) -->
     <section class="footer-cta">
         <div class="container">
             <h2>¿Listo para transformar la organización de tu consulta?</h2>
             
             <div class="form-container">
-                <p class="form-text">Introduce tu correo para obtener tu código de acceso y comenzar a usar la aplicación de inmediato.</p>
+                <p class="form-text">Solicita 15 días de prueba</p>
                 <form action="AQUÍ_VA_TU_ENLACE_DE_FORMSPREE" method="POST">
                     <div class="form-group">
                         <input type="email" name="email" placeholder="Tu correo electrónico profesional" required>
-                        <button type="submit" class="btn-submit">Solicitar mi acceso profesional</button>
+                        <button type="submit" class="btn-submit">Comenzar prueba gratis</button>
                     </div>
                 </form>
             </div>
@@ -285,7 +306,7 @@ body {
         </div>
     </section>
 
-    <!-- Nueva Lógica Interactiva por Clic -->
+    <!-- Lógica Interactiva Manual -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         const slides = document.querySelectorAll('.slide');
