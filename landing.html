@@ -92,28 +92,54 @@ body {
     background-color: #6b9a86;
     transform: translateY(-1px);
 }
-/* Sección de Video */
+/* Sección de Video / Carrusel */
 .video-section {
     padding: 60px 0;
     text-align: center;
 }
-.video-container {
-    width: 100%;
-    max-width: 700px;
+
+/* ==========================================
+   NUEVOS ESTILOS DEL CARRUSEL TIPO CELULAR 
+   ========================================== */
+.phone-mockup {
+    width: 280px;
+    height: 560px;
     margin: 0 auto;
-    background: #ffffff;
-    border: 8px solid #e8dccc; /* Simulación de marco de dispositivo */
-    border-radius: 24px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
-    aspect-ratio: 16 / 9;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #8b7355;
-    font-style: italic;
+    border: 12px solid #553c2f;
+    border-radius: 36px;
+    background: #000;
+    box-shadow: 0 12px 32px rgba(100, 70, 40, 0.15);
     position: relative;
     overflow: hidden;
 }
+.phone-screen {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: #fdfaf4;
+}
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+.slide.active {
+    opacity: 1;
+}
+.carousel-text {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #553c2f;
+    font-weight: 600;
+    min-height: 48px;
+    padding: 0 20px;
+}
+
 /* Sección de Características */
 .features-section {
     padding: 40px 0 60px 0;
@@ -167,26 +193,25 @@ body {
     border-top: 1px dashed #e8dccc;
     padding-top: 20px;
 }
-/* Adaptación para Celulares */
+
+/* Adaptación para Celulares (SIEMPRE AL FINAL) */
 @media (max-width: 768px) {
     .hero h1 { font-size: 24px; }
     .hero p { font-size: 15px; }
     .form-group { flex-direction: column; }
     .btn-submit { width: 100%; text-align: center; }
     .features-grid { grid-template-columns: 1fr; gap: 20px; }
-    .video-container { border-width: 4px; border-radius: 14px; }
+    .phone-mockup { width: 240px; height: 480px; border-width: 8px; border-radius: 28px; }
 }
 </style>
 </head>
 <body>
 
-    <!-- 1. BLOQUE DE BIENVENIDA / HERO -->
     <section class="hero">
         <div class="container">
             <h1>Gestiona tus fichas clínicas en un par de clics desde cualquier dispositivo</h1>
             <p>Olvídate de los papeles y los tachones. Registra datos personales, antecedentes y la evolución de tus pacientes con una fluidez diseñada para tu consulta.</p>
             
-            <!-- Formulario Principal -->
             <div class="form-container">
                 <p class="form-text">El asistente diseñado para terapeutas que buscan orden y fluidez. Completa tus datos para recibir tu código de acceso profesional y comenzar de inmediato.</p>
                 <form onsubmit="event.preventDefault(); alert('¡Gracias! Pronto recibirás tu código de acceso profesional.');">
@@ -199,37 +224,35 @@ body {
         </div>
     </section>
 
-    <!-- 2. BLOQUE DE DEMOSTRACIÓN VISUAL (VIDEO) -->
     <section class="video-section">
         <div class="container">
-            <!-- Espacio reservado para el video de 1 minuto -->
-            <div class="video-container">
-                <div>
-                    <span style="font-size: 40px; display:block; margin-bottom:10px;">📱</span>
-                    <strong>[ Espacio para el Video Demostrativo de 1 Minuto ]</strong>
-                    <p style="font-size:13px; margin-top:5px; color:#a08a70;">Aquí se mostrará de forma rápida la fluidez del sistema en acción</p>
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <img src="imagen/paso1.jpg" class="slide active" data-text="Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.">
+                    <img src="imagen/paso2.jpg" class="slide" data-text="Paso 2: Crea una nueva ficha clínica para tu paciente en un clic.">
+                    <img src="imagen/paso3.jpg" class="slide" data-text="Paso 3: Registra el motivo de consulta de forma rápida.">
+                    <img src="imagen/paso4.jpg" class="slide" data-text="Paso 4: Selecciona los signos y síntomas visuales al instante.">
+                    <img src="imagen/paso5.jpg" class="slide" data-text="Paso 5: Guarda la evolución de la sesión actual de manera fluida.">
+                    <img src="imagen/paso6.jpg" class="slide" data-text="Paso 6: Accede al historial completo y genera reportes en PDF.">
                 </div>
             </div>
+            <div class="carousel-text" id="carousel-caption">Paso 1: Inicia sesión de forma segura desde cualquier dispositivo.</div>
         </div>
     </section>
 
-    <!-- 3. BLOQUE DE CARACTERÍSTICAS CLAVE -->
     <section class="features-section">
         <div class="container">
             <div class="features-grid">
-                <!-- Tarjeta 1 -->
                 <div class="feature-card">
                     <span class="feature-icon">📝</span>
                     <h3>Fichas Ágiles</h3>
                     <p>Datos personales, motivos de consulta y antecedentes almacenados en un formato libre, rápido y dinámico.</p>
                 </div>
-                <!-- Tarjeta 2 -->
                 <div class="feature-card">
                     <span class="feature-icon">🪷</span>
                     <h3>Diagnóstico Visual</h3>
                     <p>Olvídate de escribir siempre lo mismo. Registra signos y síntomas seleccionando elementos con un toque en segundos.</p>
                 </div>
-                <!-- Tarjeta 3 -->
                 <div class="feature-card">
                     <span class="feature-icon">⏱️</span>
                     <h3>Historial al Instante</h3>
@@ -239,12 +262,10 @@ body {
         </div>
     </section>
 
-    <!-- 4. BLOQUE DE CIERRE -->
     <section class="footer-cta">
         <div class="container">
             <h2>¿Listo para transformar la organización de tu consulta?</h2>
             
-            <!-- Formulario Secundario de Cierre -->
             <div class="form-container">
                 <p class="form-text">Introduce tu correo para obtener tu código de acceso y comenzar a usar la aplicación de inmediato.</p>
                 <form onsubmit="event.preventDefault(); alert('¡Gracias! Pronto recibirás tu código de acceso profesional.');">
@@ -258,6 +279,24 @@ body {
             <p class="footer-rights">Asistente Clínico Holístico © 2026. Todos los derechos reservados. Tus datos viajan cifrados y seguros en la nube.</p>
         </div>
     </section>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const slides = document.querySelectorAll('.slide');
+        const caption = document.getElementById('carousel-caption');
+        let currentIndex = 0;
+
+        setInterval(() => {
+            if(slides.length === 0) return;
+            
+            slides[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + 1) % slides.length;
+            slides[currentIndex].classList.add('active');
+            
+            caption.innerText = slides[currentIndex].getAttribute('data-text');
+        }, 3000);
+    });
+    </script>
 
 </body>
 </html>
