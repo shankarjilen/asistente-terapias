@@ -331,6 +331,44 @@ body {
     .feature-icon-container { margin: 0 auto 20px auto; }
     .lightbox-close { top: 10px; right: 10px; background-color: rgba(0,0,0,0.5); }
 }
+
+/* Estilos para el mensaje fijo del Footer */
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    text-align: left;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.footer-notice-box {
+    background: #fdfaf4;
+    padding: 20px 25px;
+    border-radius: 16px;
+    border-left: 4px solid #629984;
+    box-shadow: 0 6px 15px rgba(85, 60, 47, 0.02);
+}
+.footer-notice-box p {
+    font-size: 14.5px;
+    color: #5c463a;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Ajuste móvil para el footer nuevo */
+@media (max-width: 950px) {
+    .footer-grid { 
+        grid-template-columns: 1fr; 
+        gap: 30px; 
+        text-align: center;
+    }
+    .footer-notice-box {
+        border-left: none;
+        border-top: 4px solid #629984;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -409,20 +447,27 @@ body {
         </div>
     </section>
 
-    <!-- BLOQUE DE CIERRE -->
+<!-- BLOQUE DE CIERRE -->
     <section class="footer-cta">
         <div class="container">
-            <h2>¿Listo para transformar la organización de tu consulta?</h2>
+            <h2 style="margin-bottom: 40px;">¿Listo para transformar la organización de tu consulta?</h2>
             
-            <div class="form-container">
-                <p class="form-text">Solicita 15 días de prueba</p>
-		<form action="https://formspree.io/f/xjgdvnjn" method="POST">
+            <div class="footer-grid">
+                <!-- Columna Izquierda: Formulario -->
+                <div class="form-container" style="margin: 0 auto;">
+                    <p class="form-text">Solicita 15 días de prueba</p>
+                    <form action="https://formspree.io/f/xjgdvnjn" method="POST">
+                        <div class="form-group">
+                            <input type="email" name="email" placeholder="Tu correo electrónico profesional" required>
+                            <button type="submit" class="btn-submit">Comenzar prueba gratis</button>
+                        </div>
+                    </form>
+                </div>
 
-                    <div class="form-group">
-                        <input type="email" name="email" placeholder="Tu correo electrónico profesional" required>
-                        <button type="submit" class="btn-submit">Comenzar prueba gratis</button>
-                    </div>
-                </form>
+                <!-- Columna Derecha: Mensaje Fijo -->
+                <div class="footer-notice-box">
+                    <p>💡 <strong>Información importante:</strong> Al registrar tu correo electrónico, nuestro equipo procesará tu solicitud de inmediato. En breve nos pondremos en contacto contigo a través de tu e-mail para enviarte el enlace de acceso directo y tu clave provisoria para comenzar la prueba.</p>
+                </div>
             </div>
 
             <p class="footer-rights">Asistente Clínico Holístico © 2026. Todos los derechos reservados. Tus datos viajan cifrados y seguros en la nube.</p>
