@@ -1675,8 +1675,8 @@ async function descargarCopiaSeguridadCSV() {
   }
 
   try {
-    // CORRECCIÓN: Cambiado 'supabaseCliente' por 'supabase' para que coincida con tu app
-    const { data: listaPacientes, error } = await supabase
+    // CORRECCIÓN DEFINITIVA: Usamos 'supabaseCli' que es tu variable real
+    const { data: listaPacientes, error } = await supabaseCli
       .from('pacientes')
       .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolucion, notas_lengua, consentimiento_dado, consentimiento_fecha')
       .eq('terapeuta_id', terapeutaLogueado.id)
