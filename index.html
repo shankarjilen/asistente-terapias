@@ -752,6 +752,8 @@ body { padding: 5px; }
     <button class="btn-ajuste-opcion" onclick="abrirBienvenidos()">👋 BIENVENIDOS (propósito)</button>
     <button class="btn-ajuste-opcion" onclick="abrirInstrucciones()">📖 Notas / Instrucciones</button>
     <button class="btn-ajuste-opcion" onclick="abrirMisDatos()">👤 Editar Datos Profesionales</button>
+    <button class="btn-ajuste-opcion" onclick="abrirSeguridad()">🔒 Seguridad y Responsabilidad de Datos</button>
+    <button class="btn-ajuste-opcion" style="background-color: #faf5ea; border: 1px dashed #c4a27a;" onclick="descargarCopiaSeguridadCSV()">📥 Descargar Copia de Seguridad (Excel / CSV)</button>
     <button class="btn-ajuste-cerrar" onclick="cerrarAjustes()">Cerrar</button>
   </div>
 </div>
@@ -804,6 +806,19 @@ body { padding: 5px; }
     </div>
     <button class="btn" style="width: 100%; margin-bottom: 10px; font-size: 15px; padding: 13px;" onclick="guardarMisDatos()">💾 Guardar Cambios</button>
     <button class="btn-ajuste-cerrar" onclick="cerrarMisDatos()">Cerrar</button>
+  </div>
+</div>
+
+<div id="panel-seguridad" class="modal-ajustes" onclick="if(event.target===this) cerrarSeguridad();">
+  <div class="modal-ajustes-contenido" style="max-width: 500px; text-align: left;">
+    <h3 style="text-align: center;">🔒 Seguridad y Responsabilidad de Datos</h3>
+    <div style="max-height: 60vh; overflow-y: auto; margin: 15px 0; padding-right: 8px; line-height: 1.6; color: #4a3a2a; font-size: 14px; display: flex; flex-direction: column; gap: 14px;">
+      <p style="margin: 0;"><strong>1. Propiedad de la Información</strong><br>Todos los datos clínicos ingresados en esta aplicación pertenecen exclusivamente al terapeuta. El administrador de la plataforma no se adjudica ningún derecho ni propiedad sobre la información de tus pacientes.</p>
+      <p style="margin: 0;"><strong>2. Resguardo y Copias de Seguridad</strong><br>La información se almacena en servidores en la nube de alta seguridad (infraestructura de Supabase) y cuenta con respaldos automáticos para evitar pérdidas por fallos técnicos.</p>
+      <p style="margin: 0;"><strong>3. Encriptación en Tránsito</strong><br>La aplicación utiliza conexiones seguras mediante el protocolo HTTPS. Esto garantiza que todos los datos viajan de forma cifrada desde tu dispositivo hasta la base de datos, impidiendo cualquier tipo de intercepción por terceros.</p>
+      <p style="margin: 0;"><strong>4. Responsabilidad Legal del Operador</strong><br>Al almacenar datos de salud en la nube, es responsabilidad exclusiva del terapeuta contar con el consentimiento del paciente (mediante el módulo de Consentimiento Informado incluido en la ficha) y custodiar de forma segura su clave de acceso profesional.</p>
+    </div>
+    <button class="btn-ajuste-cerrar" onclick="cerrarSeguridad()" style="width: 100%;">Cerrar</button>
   </div>
 </div>
 
@@ -1637,6 +1652,88 @@ function abrirMisDatos() {
   document.getElementById('panel-mis-datos').style.display = 'flex';
 }
 function cerrarMisDatos() { document.getElementById('panel-mis-datos').style.display = 'none'; }
+
+function abrirSeguridad() {
+  // Cerramos primero el panel de ajustes general para que no se encimen
+  cerrarAjustes();
+  // Mostramos el panel de seguridad cambiando su estilo a flex
+  document.getElementById('panel-seguridad').style.display = 'flex';
+}
+
+function cerrarSeguridad() {
+  // Ocultamos el panel de seguridad
+  document.getElementById('panel-seguridad').style.display = 'none';
+  // Volvemos a abrir el menú de ajustes por si el terapeuta quiere hacer otra acción
+  abrirAjustes();
+}
+
+
+async function descargarCopiaSeguridadCSV() {
+  if (!terapeutaLogueado || !terapeutaLogueado.id) {
+    alert("⚠️ No hay una sesión activa de terapeuta para exportar datos.");
+    return;
+  }
+
+  try {
+    // Vamos a buscar la lista real y completa de tus pacientes a Supabase
+    const { data: listaPacientes, error } = await supabaseCliente
+      .from('pacientes')
+      .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolucion, notas_lengua, consentimiento_dado, consentimiento_fecha')
+      .eq('terapeuta_id', terapeutaLogueado.id)
+      .order('nro_ficha', { ascending: true });
+
+    if (error) throw error;
+
+    if (!listaPacientes || listaPacientes.length === 0) {
+      alert("No hay datos de pacientes registrados para exportar.");
+      return;
+    }
+
+    // Encabezados en español y en mayúsculas como te gusta
+    const encabezados = [
+      "NRO FICHA", "NOMBRE", "APELLIDO", "EDAD", "SIGNO", "PROFESION", 
+      "RED SOCIAL", "TELEFONO", "CORREO", "MOTIVO CONSULTA", 
+      "ANTECEDENTES", "CONSENTIMIENTO FIRMADO", "FECHA CONSENTIMIENTO"
+    ];
+    
+    // Formateamos las filas envolviendo los textos entre comillas para que Excel no se confunda con las comas
+    const filas = listaPacientes.map(p => [
+      p.nro_ficha || '',
+      `"${(p.nombre || '').replace(/"/g, '""')}"`,
+      `"${(p.apellido || '').replace(/"/g, '""')}"`,
+      p.edad || '',
+      `"${(p.signo || '').replace(/"/g, '""')}"`,
+      `"${(p.profesion || '').replace(/"/g, '""')}"`,
+      `"${(p.red_social || '').replace(/"/g, '""')}"`,
+      `"${(p.telefono || '').replace(/"/g, '""')}"`,
+      `"${(p.correo || '').replace(/"/g, '""')}"`,
+      `"${(p.motivo || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+      `"${(p.antecedentes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+      p.consentimiento_dado ? "SI" : "NO",
+      `"${(p.consentimiento_fecha || '').replace(/"/g, '""')}"`
+    ]);
+
+    // Usamos punto y coma (;) como separador para que Excel en español lo abra perfecto como tabla directo
+    const contenidoCSV = [encabezados.join(";"), ...filas.map(f => f.join(";"))].join("\n");
+
+    // Agregamos la marca BOM (\uFEFF) para que Excel detecte los acentos y la Ñ en español
+    const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+    
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Copia_Seguridad_Pacientes_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+  } catch (err) {
+    console.error("Error al exportar la copia de seguridad:", err);
+    alert("❌ Ocurrió un error al intentar descargar la copia de seguridad.");
+  }
+}
 
 function refrescarHeaderTerapeuta() {
   const txtCentro = document.getElementById('nombre-centro-txt');
