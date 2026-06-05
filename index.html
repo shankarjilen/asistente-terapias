@@ -1678,7 +1678,7 @@ async function descargarCopiaSeguridadCSV() {
     // CORRECCIÓN REAL: Usamos 'supabaseCliente' que es tu nombre verdadero en index.html
     const { data: listaPacientes, error } = await supabaseCliente
       .from('pacientes')
-      .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolucion, notas_lengua, consentimiento_dado, consentimiento_fecha')
+      .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolacion, notas_lengua, consentimiento_dado, consentimiento_fecha')
       .eq('terapeuta_id', terapeutaLogueado.id)
       .order('nro_ficha', { ascending: true });
 
