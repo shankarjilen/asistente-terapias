@@ -1675,8 +1675,8 @@ async function descargarCopiaSeguridadCSV() {
   }
 
   try {
-    // Vamos a buscar la lista real y completa de tus pacientes a Supabase
-    const { data: listaPacientes, error } = await supabaseCliente
+    // CORRECCIÓN: Cambiado 'supabaseCliente' por 'supabase' para que coincida con tu app
+    const { data: listaPacientes, error } = await supabase
       .from('pacientes')
       .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolucion, notas_lengua, consentimiento_dado, consentimiento_fecha')
       .eq('terapeuta_id', terapeutaLogueado.id)
@@ -1689,14 +1689,13 @@ async function descargarCopiaSeguridadCSV() {
       return;
     }
 
-    // Encabezados en español y en mayúsculas como te gusta
+    // Encabezados en español y en mayúsculas
     const encabezados = [
       "NRO FICHA", "NOMBRE", "APELLIDO", "EDAD", "SIGNO", "PROFESION", 
       "RED SOCIAL", "TELEFONO", "CORREO", "MOTIVO CONSULTA", 
       "ANTECEDENTES", "CONSENTIMIENTO FIRMADO", "FECHA CONSENTIMIENTO"
     ];
     
-    // Formateamos las filas envolviendo los textos entre comillas para que Excel no se confunda con las comas
     const filas = listaPacientes.map(p => [
       p.nro_ficha || '',
       `"${(p.nombre || '').replace(/"/g, '""')}"`,
@@ -1713,10 +1712,8 @@ async function descargarCopiaSeguridadCSV() {
       `"${(p.consentimiento_fecha || '').replace(/"/g, '""')}"`
     ]);
 
-    // Usamos punto y coma (;) como separador para que Excel en español lo abra perfecto como tabla directo
     const contenidoCSV = [encabezados.join(";"), ...filas.map(f => f.join(";"))].join("\n");
 
-    // Agregamos la marca BOM (\uFEFF) para que Excel detecte los acentos y la Ñ en español
     const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
     
     const link = document.createElement("a");
@@ -1734,6 +1731,7 @@ async function descargarCopiaSeguridadCSV() {
     alert("❌ Ocurrió un error al intentar descargar la copia de seguridad.");
   }
 }
+
 
 function refrescarHeaderTerapeuta() {
   const txtCentro = document.getElementById('nombre-centro-txt');
