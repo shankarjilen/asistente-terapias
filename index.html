@@ -1693,24 +1693,25 @@ async function descargarCopiaSeguridadCSV() {
     const encabezados = [
       "NRO FICHA", "NOMBRE", "APELLIDO", "EDAD", "SIGNO", "PROFESION", 
       "RED SOCIAL", "TELEFONO", "CORREO", "MOTIVO CONSULTA", 
-      "ANTECEDENTES", "CONSENTIMIENTO FIRMADO", "FECHA CONSENTIMIENTO"
-    ];
+      "ANTECEDENTES", "EVOLUCIÓN", "NOTAS DIAGNÓSTICO", "CONSENTIMIENTO FIRMADO", "FECHA CONSENTIMIENTO"    ];
     
-    const filas = listaPacientes.map(p => [
-      p.nro_ficha || '',
-      `"${(p.nombre || '').replace(/"/g, '""')}"`,
-      `"${(p.apellido || '').replace(/"/g, '""')}"`,
-      p.edad || '',
-      `"${(p.signo || '').replace(/"/g, '""')}"`,
-      `"${(p.profesion || '').replace(/"/g, '""')}"`,
-      `"${(p.red_social || '').replace(/"/g, '""')}"`,
-      `"${(p.telefono || '').replace(/"/g, '""')}"`,
-      `"${(p.correo || '').replace(/"/g, '""')}"`,
-      `"${(p.motivo || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-      `"${(p.antecedentes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-      p.consentimiento_dado ? "SI" : "NO",
-      `"${(p.consentimiento_fecha || '').replace(/"/g, '""')}"`
-    ]);
+const filas = listaPacientes.map(p => [
+  p.nro_ficha || '',
+  `"${(p.nombre || '').replace(/"/g, '""')}"`,
+  `"${(p.apellido || '').replace(/"/g, '""')}"`,
+  p.edad || '',
+  `"${(p.signo || '').replace(/"/g, '""')}"`,
+  `"${(p.profesion || '').replace(/"/g, '""')}"`,
+  `"${(p.red_social || '').replace(/"/g, '""')}"`,
+  `"${(p.telefono || '').replace(/"/g, '""')}"`,
+  `"${(p.correo || '').replace(/"/g, '""')}"`,
+  `"${(p.motivo || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+  `"${(p.antecedentes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+  `"${(p.evolacion || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, // <-- EVOLUCIÓN
+  `"${(p.notas_lengua || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, // <-- NOTAS DIAGNÓSTICO
+  p.consentimiento_dado ? "SI" : "NO", // <-- CONSENTIMIENTO FIRMADO
+  `"${(p.consentimiento_fecha || '').replace(/"/g, '""')}"` // <-- FECHA CONSENTIMIENTO
+]);
 
     const contenidoCSV = [encabezados.join(";"), ...filas.map(f => f.join(";"))].join("\n");
 
