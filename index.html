@@ -1713,8 +1713,17 @@ const filas = listaPacientes.map(p => [
   `"${(p.consentimiento_fecha || '').replace(/"/g, '""')}"` // <-- FECHA CONSENTIMIENTO
 ]);
 
-    const contenidoCSV = [encabezados.join(";"), ...filas.map(f => f.join(";"))].join("\n");
+const escaparCSV = (valor) => {
+  if (valor === null || valor === undefined) return '""';
 
+  return `"${String(valor).replace(/"/g, '""')}"`;
+};
+const contenidoCSV = [
+  encabezados.map(h => escaparCSV(h)).join(";"),
+  ...filas.map(f =>
+    f.map(celda => escaparCSV(celda)).join(";")
+  )
+].join("\n");
     const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
     
     const link = document.createElement("a");
