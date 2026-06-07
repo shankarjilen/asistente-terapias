@@ -1191,9 +1191,14 @@ function cargarPacienteEnPantalla(paciente, ultimaSesion = null) {
   document.getElementById('motivo-consulta').value = paciente.motivoConsulta || '';
   document.getElementById('antecedentes').value = paciente.antecedentes || '';
   document.getElementById('evolucion').value = paciente.evolacion || '';
-  const notaDiag = paciente.notas_lengua || '';
+
+const notaDiag = paciente.notas_lengua || '';
   document.getElementById('diagnostico-general').value = notaDiag;
   if (notaDiag.trim() !== '') { document.getElementById('campo-diagnostico-general').style.display = 'block'; }
+  ['motivo-consulta','antecedentes','evolucion','diagnostico-general'].forEach(id => {
+    autoResizeTextarea(document.getElementById(id));
+  });
+
   document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
   const hoyISO = new Date().toISOString().split('T')[0];
   if (ultimaSesion && ultimaSesion.fecha === hoyISO && ultimaSesion.diagnosticos) {
