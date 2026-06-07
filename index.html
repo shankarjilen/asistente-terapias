@@ -1199,8 +1199,8 @@ function cargarPacienteEnPantalla(paciente, ultimaSesion = null) {
   document.getElementById('motivo-consulta').scrollTop = document.getElementById('motivo-consulta').scrollHeight;
   document.getElementById('antecedentes').scrollTop = document.getElementById('antecedentes').scrollHeight;
   document.getElementById('evolucion').scrollTop = document.getElementById('evolucion').scrollHeight;
-  document.getElementById('diagnostico-general').scrollTop = document.getElementById('diagnostico-general').scrollHeight;
   if (notaDiag.trim() !== '') { document.getElementById('campo-diagnostico-general').style.display = 'block'; }
+  document.getElementById('diagnostico-general').scrollTop = document.getElementById('diagnostico-general').scrollHeight;
   document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
   const hoyISO = new Date().toISOString().split('T')[0];
   if (ultimaSesion && ultimaSesion.fecha === hoyISO && ultimaSesion.diagnosticos) {
