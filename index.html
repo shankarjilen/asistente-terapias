@@ -1095,8 +1095,8 @@ async function guardarPacienteEnSupabase(paciente) {
       correo: paciente.correo || '',
       motivo: paciente.motivoConsulta || '',
       antecedentes: paciente.antecedentes || '',
-      evolacion: document.getElementById('evolucion')?.value || '',
-      notas_lengua: document.getElementById('diagnostico-general')?.value || '',
+      evolucion: document.getElementById('evolucion')?.value || '',
+      notas_diagnostico: document.getElementById('diagnostico-general')?.value || '',
       consentimiento_dado: paciente.consentimientoDado || false,
       consentimiento_fecha: paciente.consentimientoFecha || null,
       nro_ficha: parseInt(paciente.nroFicha),
@@ -1190,8 +1190,8 @@ function cargarPacienteEnPantalla(paciente, ultimaSesion = null) {
   document.getElementById('nro-ficha').innerText = paciente.nroFicha || paciente.id;
   document.getElementById('motivo-consulta').value = paciente.motivoConsulta || '';
   document.getElementById('antecedentes').value = paciente.antecedentes || '';
-  document.getElementById('evolucion').value = paciente.evolacion || '';
-  const notaDiag = paciente.notas_lengua || '';
+  document.getElementById('evolucion').value = paciente.evolucion || '';
+  const notaDiag = paciente.notas_diagnostico || '';
   document.getElementById('diagnostico-general').value = notaDiag;
   if (notaDiag.trim() !== '') { document.getElementById('campo-diagnostico-general').style.display = 'block'; }
   document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
@@ -1279,8 +1279,8 @@ async function seleccionarPaciente(id) {
         correo: pData.correo,
         motivoConsulta: pData.motivo,
         antecedentes: pData.antecedentes,
-        evolacion: pData.evolacion,
-        notas_lengua: pData.notas_lengua,
+        evolucion: pData.evolucion,
+        notas_diagnostico: pData.notas_diagnostico,
         consentimientoDado: pData.consentimiento_dado,
         consentimientoFecha: pData.consentimiento_fecha
       };
@@ -1317,7 +1317,7 @@ async function nuevaFicha() {
       nroFicha: nuevoNroFicha,
       nombre: '', apellido: '', edad: '', signo: '', profesion: '',
       redSocial: '', telefono: '', correo: '', motivoConsulta: '',
-      antecedentes: '', evolacion: '', notas_lengua: '',
+      antecedentes: '', evolucion: '', notas_diagnostico: '',
       consentimientoDado: false, consentimientoFecha: null
     };
     // ── CAMBIO 1: asignación con I mayúscula ──
@@ -1363,8 +1363,8 @@ async function guardarConsulta() {
     pacienteActivo.correo = document.getElementById('correo').value;
     pacienteActivo.motivoConsulta = document.getElementById('motivo-consulta').value;
     pacienteActivo.antecedentes = document.getElementById('antecedentes').value;
-    pacienteActivo.evolacion = document.getElementById('evolucion').value;
-    pacienteActivo.notas_lengua = document.getElementById('diagnostico-general').value;
+    pacienteActivo.evolucion = document.getElementById('evolucion').value;
+    pacienteActivo.notas_diagnostico = document.getElementById('diagnostico-general').value;
     if (chkLegal.checked && !pacienteActivo.consentimientoDado) {
       pacienteActivo.consentimientoDado = true;
       pacienteActivo.consentimientoFecha = new Date().toLocaleDateString('es-ES');
@@ -1400,7 +1400,7 @@ async function verHistorial() {
   document.getElementById('panel-historial').style.display = 'flex';
   contenedorLista.innerHTML = '';
   let html = '';
-  const notaUnica = pacienteActivo.notas_lengua || '';
+  const notaUnica = pacienteActivo.notas_diagnostico || '';
   if (notaUnica.trim() !== '') {
     html += `
       <div style="margin-bottom: 20px; padding: 12px; border: 1px solid #c4a27a; border-radius: 12px; background: #faf5ea;">
@@ -1498,7 +1498,7 @@ async function generarPDFCompleto() {
   const fechaImpresion = new Date().toLocaleDateString('es-ES');
   const sesiones = await cargarHistorialCompleto(pacienteActivoId);
   let htmlDiagnosticosPorFecha = '';
-  const notaUnica = pacienteActivo.notas_lengua || '';
+  const notaUnica = pacienteActivo.notas_diagnostico || '';
   if (notaUnica.trim() !== '') {
     htmlDiagnosticosPorFecha += `
       <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #c4a27a; border-radius: 8px; background: #faf5ea;">
@@ -1678,7 +1678,7 @@ async function descargarCopiaSeguridadCSV() {
     // CORRECCIÓN REAL: Usamos 'supabaseCliente' que es tu nombre verdadero en index.html
     const { data: listaPacientes, error } = await supabaseCliente
       .from('pacientes')
-      .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolacion, notas_lengua, consentimiento_dado, consentimiento_fecha')
+      .select('id, nombre, apellido, telefono, correo, nro_ficha, edad, signo, profesion, red_social, motivo, antecedentes, evolucion, notas_diagnostico, consentimiento_dado, consentimiento_fecha')
       .eq('terapeuta_id', terapeutaLogueado.id)
       .order('nro_ficha', { ascending: true });
 
@@ -1707,8 +1707,8 @@ const filas = listaPacientes.map(p => [
   `"${(p.correo || '').replace(/"/g, '""')}"`,
   `"${(p.motivo || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
   `"${(p.antecedentes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-  `"${(p.evolacion || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, // <-- EVOLUCIÓN
-  `"${(p.notas_lengua || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, // <-- NOTAS DIAGNÓSTICO
+  `"${(p.evolucion || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, // <-- EVOLUCIÓN
+  `"${(p.notas_diagnostico || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`, // <-- NOTAS DIAGNÓSTICO
   p.consentimiento_dado ? "SI" : "NO", // <-- CONSENTIMIENTO FIRMADO
   `"${(p.consentimiento_fecha || '').replace(/"/g, '""')}"` // <-- FECHA CONSENTIMIENTO
 ]);
