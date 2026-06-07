@@ -1160,6 +1160,10 @@ function limpiarPantalla() {
   document.getElementById('antecedentes').value = '';
   document.getElementById('evolucion').value = '';
   document.getElementById('diagnostico-general').value = '';
+  document.getElementById('motivo-consulta').style.height = '48px';
+  document.getElementById('antecedentes').style.height = '48px';
+  document.getElementById('evolucion').style.height = '48px';
+  document.getElementById('diagnostico-general').style.height = '48px';
   document.getElementById('campo-diagnostico-general').style.display = 'none';
   document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
   const buscador = document.getElementById('buscador-input');
