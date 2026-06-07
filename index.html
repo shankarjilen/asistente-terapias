@@ -1833,7 +1833,10 @@ const todosCampos = document.querySelectorAll(
         campo.addEventListener('click', function() {
             const len = this.value.length;
             this.setSelectionRange(len, len);
+            this.scrollLeft = this.scrollWidth;
+            this.scrollTop = this.scrollHeight;
         });
+
     });
 
 });
