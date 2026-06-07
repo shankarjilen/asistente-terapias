@@ -1826,6 +1826,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
+const todosCampos = document.querySelectorAll(
+        'input[type="text"], input[type="password"], textarea'
+    );
+    todosCampos.forEach(campo => {
+        campo.addEventListener('click', function() {
+            const len = this.value.length;
+            this.setSelectionRange(len, len);
+        });
+    });
+
 });
 
 </script>
