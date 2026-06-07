@@ -1157,10 +1157,13 @@ function limpiarPantalla() {
   document.getElementById('telefono').value = '';
   document.getElementById('correo').value = '';
   document.getElementById('nro-ficha').innerText = '';
-  document.getElementById('motivo-consulta').value = '';
-  document.getElementById('antecedentes').value = '';
-  document.getElementById('evolucion').value = '';
-  document.getElementById('diagnostico-general').value = '';
+
+['motivo-consulta','antecedentes','evolucion','diagnostico-general'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.style.height = '48px';
+  });
+
   document.getElementById('campo-diagnostico-general').style.display = 'none';
   document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('activo'));
   const buscador = document.getElementById('buscador-input');
