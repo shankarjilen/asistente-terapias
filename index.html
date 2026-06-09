@@ -1368,6 +1368,7 @@ async function guardarConsulta() {
     pacienteActivo.redSocial = document.getElementById('red-social').value;
     pacienteActivo.telefono = document.getElementById('telefono').value;
     pacienteActivo.correo = document.getElementById('correo').value;
+    pacienteActivo.codigo = terapeutaLogueado?.codigo;
     pacienteActivo.motivoConsulta = document.getElementById('motivo-consulta').value;
     pacienteActivo.antecedentes = document.getElementById('antecedentes').value;
     pacienteActivo.evolucion = document.getElementById('evolucion').value;
