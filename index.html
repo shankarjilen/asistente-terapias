@@ -1099,7 +1099,8 @@ async function guardarPacienteEnSupabase(paciente) {
       consentimiento_dado: paciente.consentimientoDado || false,
       consentimiento_fecha: paciente.consentimientoFecha || null,
       nro_ficha: parseInt(paciente.nroFicha),
-      terapeuta_id: terapeutaLogueado ? terapeutaLogueado.id : null
+      terapeuta_id: terapeutaLogueado ? terapeutaLogueado.id : null,
+      codigo: paciente.codigo || null
     };
     const { data: existe } = await supabaseCliente.from('pacientes').select('id').eq('id', paciente.id).maybeSingle();
     let result;
