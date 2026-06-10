@@ -1,1 +1,63 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Terapeutas</title>
+    <style>
+        /* Un diseño muy simple y limpio para trabajar cómodos */
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f7f6; }
+        .contenedor { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .campo { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="email"], input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #2b7a78; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #17252a; }
+        .mensaje { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h2>Alta de Terapeuta</h2>
+    
+    <div class="campo">
+        <label>Email del Terapeuta:</label>
+        <input type="email" id="email" placeholder="ejemplo@correo.com">
+    </div>
+    
+    <div class="campo">
+        <label>Código / Contraseña (2 letras y 4 números):</label>
+        <input type="text" id="claveCodigo" placeholder="Ej: AB1234" maxlength="6">
+    </div>
+    
+    <button id="btnRegistrar">Registrar Terapeuta</button>
+    
+    <div id="textoMensaje" class="mensaje"></div>
+</div>
+
+<script>
+    // Acá adentro va a ir el "cerebro" (JavaScript) que se conectará con Supabase.
+    // Por ahora lo dejamos listo para la conexión.
+    document.getElementById('btnRegistrar').addEventListener('click', function() {
+        const email = document.getElementById('email').value;
+        const claveCodigo = document.getElementById('claveCodigo').value;
+        const mensaje = document.getElementById('textoMensaje');
+
+        if(!email || !claveCodigo) {
+            mensaje.style.color = "red";
+            mensaje.innerText = "Por favor, completa todos los campos.";
+            return;
+        }
+
+        mensaje.style.color = "blue";
+        mensaje.innerText = "Procesando registro...";
+        
+        // El paso que sigue será meter acá la lógica "Todo o Nada" de Supabase
+    });
+</script>
+
+</body>
+</html>
