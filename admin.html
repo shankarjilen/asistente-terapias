@@ -48,6 +48,19 @@
       transition: border-color 0.2s;
     }
     input:focus { border-color: #7eb09e; }
+    .service-key-field {
+      background: #fffbeb;
+      border-color: #f6ad55;
+      font-size: 0.78rem;
+      font-family: monospace;
+      color: #744210;
+    }
+    .service-key-field:focus { border-color: #ed8936; }
+    .divider {
+      border: none;
+      border-top: 1.5px dashed #e2e8f0;
+      margin-bottom: 20px;
+    }
     button {
       width: 100%;
       padding: 14px;
@@ -71,13 +84,33 @@
       white-space: pre-wrap;
       line-height: 1.5;
     }
-    .exito  { background: #c6f6d5; color: #276749; display: block !important; }
-    .error  { background: #fed7d7; color: #9b2c2c; display: block !important; }
+    .exito { background: #c6f6d5; color: #276749; display: block !important; }
+    .error { background: #fed7d7; color: #9b2c2c; display: block !important; }
+    .aviso {
+      font-size: 0.78rem;
+      color: #92400e;
+      background: #fefce8;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Registrar Terapeuta</h1>
+
+    <label for="serviceKey">🔑 Service Role Key (Supabase)</label>
+    <div class="aviso">⚠️ No se guarda. Pégala cada vez que uses este formulario.</div>
+    <input
+      type="password"
+      id="serviceKey"
+      class="service-key-field"
+      placeholder="eyJhbGciOiJIUzI1NiIs..."
+    />
+
+    <hr class="divider"/>
 
     <label for="email">Email del Terapeuta</label>
     <input type="email" id="email" placeholder="terapeuta@ejemplo.com" />
@@ -91,9 +124,7 @@
   </div>
 
   <script>
-    const SUPABASE_URL     = 'https://ejdxiwledgsxglvhejba.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_7wf8GsvmiqWZ5271iQJJEQ_zPPf_OiK';
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_URL = 'https://ejdxiwledgsxglvhejba.supabase.co';
 
     function mostrar(msg, tipo) {
       const el = document.getElementById('mensaje');
@@ -102,24 +133,32 @@
     }
 
     async function registrar() {
-      const email  = document.getElementById('email').value.trim();
-      const codigo = document.getElementById('codigo').value.trim();
-      const btn    = document.getElementById('btnRegistrar');
+      const serviceKey = document.getElementById('serviceKey').value.trim();
+      const email      = document.getElementById('email').value.trim();
+      const codigo     = document.getElementById('codigo').value.trim();
+      const btn        = document.getElementById('btnRegistrar');
 
       mostrar('', '');
 
+      if (!serviceKey) {
+        mostrar('⚠️ Pegá la Service Role Key antes de continuar.', 'error');
+        return;
+      }
       if (!email || !codigo) {
-        mostrar('⚠️ Completá ambos campos antes de continuar.', 'error');
+        mostrar('⚠️ Completá el email y el código.', 'error');
         return;
       }
 
       btn.disabled = true;
       btn.textContent = 'Procesando…';
 
+      const sb = window.supabase.createClient(SUPABASE_URL, serviceKey);
+
       // 1. Crear usuario en Auth
-      const { data: authData, error: authError } = await sb.auth.signUp({
+      const { data: authData, error: authError } = await sb.auth.admin.createUser({
         email,
-        password: codigo
+        password: codigo,
+        email_confirm: true
       });
 
       if (authError) {
@@ -132,7 +171,7 @@
       const userId = authData?.user?.id;
 
       if (!userId) {
-        mostrar('❌ No se obtuvo el ID del usuario. Verificá si el email ya existe o está pendiente de confirmación.', 'error');
+        mostrar('❌ No se obtuvo el ID del usuario.', 'error');
         btn.disabled = false;
         btn.textContent = 'Registrar Terapeuta';
         return;
@@ -150,8 +189,7 @@
 
       if (dbError) {
         mostrar(
-          '⚠️ Usuario creado en Auth (ID: ' + userId + ') pero FALLÓ la inserción en la tabla terapeutas:\n' + dbError.message +
-          '\n\nAcción requerida: revisar la tabla manualmente.',
+          '⚠️ Usuario creado en Auth (ID: ' + userId + ') pero FALLÓ la inserción en terapeutas:\n' + dbError.message,
           'error'
         );
         btn.disabled = false;
@@ -159,7 +197,7 @@
         return;
       }
 
-      // 3. Éxito total
+      // 3. Éxito
       document.getElementById('email').value  = '';
       document.getElementById('codigo').value = '';
       mostrar('✅ Terapeuta registrado correctamente.\nEmail: ' + email, 'exito');
