@@ -1638,7 +1638,6 @@ setTimeout(() => URL.revokeObjectURL(urlBlob), 3000);
 else {
     const ventanaImpresion = window.open('', '_blank');
     if (ventanaImpresion) {
-      alert('✅ Preparando PDF... Se abrirá una ventana para guardar/imprimir el archivo.');
       ventanaImpresion.document.write(htmlContent);
       ventanaImpresion.document.close();
       setTimeout(() => { ventanaImpresion.print(); ventanaImpresion.close(); }, 250);
@@ -1745,6 +1744,7 @@ const contenidoCSV = [
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    alert('✅ Copia de seguridad descargada correctamente.');
 
   } catch (err) {
     console.error("Error al exportar la copia de seguridad:", err);
