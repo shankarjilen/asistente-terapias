@@ -154,6 +154,27 @@
 
       const sb = window.supabase.createClient(SUPABASE_URL, serviceKey);
 
+// NUEVO CONTROL: Verificar si el código ya existe en la tabla terapeutas
+      const { data: codigoExiste, error: checkError } = await sb
+        .from('terapeutas')
+        .select('codigo')
+        .eq('codigo', codigo)
+        .maybeSingle();
+
+      if (checkError) {
+        mostrar('❌ Error al verificar el código:\n' + checkError.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Registrar Terapeuta';
+        return;
+      }
+
+      if (codigoExiste) {
+        mostrar('⚠️ El código "' + codigo + '" ya está asignado a otro terapeuta. Elegí uno diferente.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Registrar Terapeuta';
+        return;
+      }
+
       // 1. Crear usuario en Auth
       const { data: authData, error: authError } = await sb.auth.admin.createUser({
         email,
