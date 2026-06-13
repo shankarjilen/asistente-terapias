@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Nueva Contraseña</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f4f8;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .container {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+    h1 {
+      font-size: 1.4rem;
+      color: #2d3748;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #4a5568;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #2d3748;
+      margin-bottom: 20px;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #7eb09e;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: #5e9484; }
+    #mensaje {
+      margin-top: 22px;
+      padding: 13px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      display: none;
+    }
+    .exito { background: #c6f6d5; color: #276749; display: block !important; }
+    .error { background: #fed7d7; color: #9b2c2c; display: block !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Crea tu Contraseña</h1>
+    <p style="font-size:0.9rem; color:#718096; margin-bottom:20px; text-align:center;">
+      Ingresá la clave que usarás para acceder a tu cuenta.
+    </p>
+
+    <label for="nuevaClave">Nueva Contraseña</label>
+    <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
+
+    <label for="confirmarClave">Confirmar Contraseña</label>
+    <input type="password" id="confirmarClave" placeholder="Repetí tu contraseña" />
+
+    <button id="btnGuardar" onclick="guardarClave()">Guardar Contraseña</button>
+
+    <div id="mensaje"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://ejdxiwledgsxglvhejba.supabase.co';
+
+    // Capturamos automáticamente la sesión que Supabase manda en el enlace del correo
+    const sb = window.supabase.createClient(SUPABASE_URL, '');
+
+    function mostrar(msg, tipo) {
+      const el = document.getElementById('mensaje');
+      el.textContent = msg;
+      el.className = tipo;
+    }
+
+    async function guardarClave() {
+      const nuevaClave = document.getElementById('nuevaClave').value.trim();
+      const confirmarClave = document.getElementById('confirmarClave').value.trim();
+      const btn = document.getElementById('btnGuardar');
+
+      mostrar('', '');
+
+      if (nuevaClave.length < 6) {
+        mostrar('⚠️ La contraseña debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
+      if (nuevaClave !== confirmarClave) {
+        mostrar('⚠️ Las contraseñas no coinciden.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Guardando…';
+
+      // Actualiza la contraseña usando la sesión activa del correo
+      const { error } = await sb.auth.updateUser({ password: nuevaClave });
+
+      if (error) {
+        mostrar('❌ Error al guardar contraseña:\n' + error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Guardar Contraseña';
+        return;
+      }
+
+      mostrar('✅ ¡Contraseña guardada con éxito! Redirigiendo a la aplicación...', 'exito');
+
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
