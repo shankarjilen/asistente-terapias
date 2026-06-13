@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Nueva Contraseña</title>
+  <title>Actualizar Mi Contraseña</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,10 +65,7 @@
       width: auto;
       padding: 0;
     }
-    .ojo-btn:hover {
-      color: #4a5568;
-      background: none;
-    }
+    .ojo-btn:hover { color: #4a5568; background: none; }
     button {
       width: 100%;
       padding: 14px;
@@ -91,43 +88,39 @@
     }
     .exito { background: #c6f6d5; color: #276749; display: block !important; }
     .error { background: #fed7d7; color: #9b2c2c; display: block !important; }
-    #bloqueCarga {
-      text-align: center;
-      color: #4a5568;
-      font-weight: 600;
-    }
-    #formularioClave {
-      display: none;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="bloqueCarga">
-      🔄 Validando tu invitation segura... Por favor, esperá un momento.
+    <h1>Actualizá tu Contraseña</h1>
+    <p style="font-size:0.9rem; color:#718096; margin-bottom:20px; text-align:center;">
+      Ingresá tus datos para cambiar la clave temporal por una tuya personal.
+    </p>
+
+    <label for="email">Tu Correo Electrónico</label>
+    <input type="email" id="email" placeholder="terapeuta@ejemplo.com" />
+
+    <label for="claveTemporal">Contraseña Temporal Actual</label>
+    <div class="input-wrapper">
+      <input type="password" id="claveTemporal" placeholder="La clave que te dio el administrador" />
+      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('claveTemporal', this)">👁️</button>
     </div>
 
-    <div id="formularioClave">
-      <h1>Crea tu Contraseña</h1>
-      <p style="font-size:0.9rem; color:#718096; margin-bottom:20px; text-align:center;">
-        Ingresá la clave que usarás para acceder a tu cuenta.
-      </p>
+    <hr style="border:none; border-top:1.5px dashed #e2e8f0; margin-bottom:20px;">
 
-      <label for="nuevaClave">Nueva Contraseña</label>
-      <div class="input-wrapper">
-        <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
-        <button type="button" class="ojo-btn" onclick="alternarVisibilidad('nuevaClave', this)">👁️</button>
-      </div>
-
-      <label for="confirmarClave">Confirmar Contraseña</label>
-      <div class="input-wrapper">
-        <input type="password" id="confirmarClave" placeholder="Repetí tu contraseña" />
-        <button type="button" class="ojo-btn" onclick="alternarVisibilidad('confirmarClave', this)">👁️</button>
-      </div>
-
-      <button id="btnGuardar" onclick="guardarClave()">Guardar Contraseña</button>
+    <label for="nuevaClave">Nueva Contraseña Personal</label>
+    <div class="input-wrapper">
+      <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
+      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('nuevaClave', this)">👁️</button>
     </div>
 
+    <label for="confirmarClave">Confirmar Nueva Contraseña</label>
+    <div class="input-wrapper">
+      <input type="password" id="confirmarClave" placeholder="Repetí tu nueva contraseña" />
+      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('confirmarClave', this)">👁️</button>
+    </div>
+
+    <button id="btnGuardar" onclick="actualizarClave()">Actualizar Contraseña</button>
     <div id="mensaje"></div>
   </div>
 
@@ -136,7 +129,7 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqZHhpd2xlZGdzeGdsdmhlamJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzExNzMsImV4cCI6MjA1ODcxMTE3M30.13V8iunhJbU3lXn9pL5E5R3_6B7X0BqR2_wM3_6B7X0'; 
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false } // <-- Cambiado a false para que no guarde sesiones basura
+      auth: { persistSession: false }
     });
 
     function mostrar(msg, tipo) {
@@ -147,59 +140,62 @@
 
     function alternarVisibilidad(idCampo, boton) {
       const campo = document.getElementById(idCampo);
-      if (campo.type === "password") {
-        campo.type = "text";
-        boton.textContent = "🙈";
-      } else {
-        campo.type = "password";
-        boton.textContent = "👁️";
-      }
+      campo.type = campo.type === "password" ? "text" : "password";
+      boton.textContent = campo.type === "text" ? "🙈" : "👁️";
     }
 
-    // CONTROL AUTOMÁTICO AL ENTRAR DESDE EL ENLACE
-    window.addEventListener('DOMContentLoaded', async () => {
-      setTimeout(async () => {
-        const { data } = await sb.auth.getSession();
-        
-        if (data && data.session) {
-          document.getElementById('bloqueCarga').style.display = 'none';
-          document.getElementById('formularioClave').style.display = 'block';
-        } else {
-          document.getElementById('bloqueCarga').style.display = 'none';
-          mostrar('⚠️ El enlace de invitación expiró, ya fue usado o no es válido. Solicitá una nueva invitación.', 'error');
-        }
-      }, 1500);
-    });
-
-    async function guardarClave() {
+    async function actualizarClave() {
+      const email = document.getElementById('email').value.trim();
+      const claveTemporal = document.getElementById('claveTemporal').value.trim();
       const nuevaClave = document.getElementById('nuevaClave').value.trim();
       const confirmarClave = document.getElementById('confirmarClave').value.trim();
       const btn = document.getElementById('btnGuardar');
 
       mostrar('', '');
 
+      if (!email || !claveTemporal || !nuevaClave || !confirmarClave) {
+        mostrar('⚠️ Por favor completá todos los campos.', 'error');
+        return;
+      }
       if (nuevaClave.length < 6) {
-        mostrar('⚠️ La contraseña debe tener al menos 6 caracteres.', 'error');
+        mostrar('⚠️ La nueva contraseña debe tener al menos 6 caracteres.', 'error');
         return;
       }
       if (nuevaClave !== confirmarClave) {
-        mostrar('⚠️ Las contraseñas no coinciden.', 'error');
+        mostrar('⚠️ Las nuevas contraseñas no coinciden.', 'error');
         return;
       }
 
       btn.disabled = true;
-      btn.textContent = 'Guardando…';
+      btn.textContent = 'Procesando…';
 
-      const { error } = await sb.auth.updateUser({ password: nuevaClave });
+      // 1. Iniciar sesión con la clave temporal de forma clásica
+      const { error: loginError } = await sb.auth.signInWithPassword({
+        email: email,
+        password: claveTemporal
+      });
 
-      if (error) {
-        mostrar('❌ Error al guardar contraseña: ' + error.message, 'error');
+      if (loginError) {
+        mostrar('❌ La contraseña temporal o el correo son incorrectos.', 'error');
         btn.disabled = false;
-        btn.textContent = 'Guardar Contraseña';
+        btn.textContent = 'Actualizar Contraseña';
         return;
       }
 
-      mostrar('✅ ¡Contraseña guardada con éxito! Redirigiendo a la aplicación...', 'exito');
+      // 2. Si entró bien, se actualiza a su clave definitiva
+      const { error: updateError } = await sb.auth.updateUser({ password: nuevaClave });
+
+      if (updateError) {
+        mostrar('❌ Error al guardar la nueva contraseña: ' + updateError.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Actualizar Contraseña';
+        return;
+      }
+
+      // 3. Modificar la tabla terapeutas para reflejar que cambió su clave
+      await sb.from('terapeutas').update({ password_plano: 'Actualizada por usuario' }).eq('email', email);
+
+      mostrar('✅ ¡Contraseña actualizada con éxito! Redirigiendo...', 'exito');
 
       setTimeout(() => {
         window.location.href = "index.html";

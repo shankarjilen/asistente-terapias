@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin - Invitar Terapeuta</title>
+  <title>Admin - Registrar Terapeuta</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -99,7 +99,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Invitar Terapeuta</h1>
+    <h1>Registrar Terapeuta</h1>
 
     <label for="serviceKey">🔑 Service Role Key (Supabase)</label>
     <div class="aviso">⚠️ No se guarda. Pégala cada vez que uses este formulario.</div>
@@ -115,7 +115,10 @@
     <label for="email">Email del Terapeuta</label>
     <input type="email" id="email" placeholder="terapeuta@ejemplo.com" />
 
-    <button id="btnRegistrar" onclick="enviarInvitacion()">Enviar Invitación por Correo</button>
+    <label for="passwordTemporal">Contraseña Temporal</label>
+    <input type="text" id="passwordTemporal" placeholder="Ej: Terapeuta2026!" value="Terapeuta2026!" />
+
+    <button id="btnRegistrar" onclick="registrarTerapeuta()">Dar de Alta Terapeuta</button>
 
     <div id="mensaje"></div>
   </div>
@@ -129,9 +132,10 @@
       el.className = tipo;
     }
 
-    async function enviarInvitacion() {
+    async function registrarTerapeuta() {
       const serviceKey = document.getElementById('serviceKey').value.trim();
       const email      = document.getElementById('email').value.trim();
+      const password   = document.getElementById('passwordTemporal').value.trim();
       const btn        = document.getElementById('btnRegistrar');
 
       mostrar('', '');
@@ -144,61 +148,57 @@
         mostrar('⚠️ Completá el email del terapeuta.', 'error');
         return;
       }
+      if (password.length < 6) {
+        mostrar('⚠️ La contraseña temporal debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = 'Procesando…';
 
       const sb = window.supabase.createClient(SUPABASE_URL, serviceKey);
 
-      // Dirección exacta de la pantalla de activación
-      const redirigirA = 'https://desarrollo--bucolic-torte-9aa5bb.netlify.app/crear-clave.html';
-
-      // 1. Enviar correo de invitación oficial
-      const { data: authData, error: authError } = await sb.auth.admin.inviteUserByEmail(email, {
-        redirectTo: redirigirA
+      // 1. Crear el usuario directamente activo en la autenticación con la clave temporal
+      const { data: authData, error: authError } = await sb.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true // Se marca como verificado automáticamente para evitar enlaces caídos
       });
 
       if (authError) {
-        mostrar('❌ Error al enviar invitación:\n' + authError.message, 'error');
+        mostrar('❌ Error al dar de alta en Auth:\n' + authError.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Enviar Invitación por Correo';
+        btn.textContent = 'Dar de Alta Terapeuta';
         return;
       }
 
       const userId = authData?.user?.id;
 
-      if (!userId) {
-        mostrar('❌ No se obtuvo el ID del usuario invitado.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Enviar Invitación por Correo';
-        return;
-      }
-
-      // 2. Insertar en tabla terapeutas registrando su estado inicial
+      // 2. Insertar directamente en la tabla terapeutas
       const { error: dbError } = await sb
         .from('terapeutas')
         .insert([{
           id:             userId,
           email:          email,
-          codigo:         'PENDIENTE',
-          password_plano: 'Establecido por el usuario'
+          codigo:         'ACTIVO',
+          password_plano: password
         }]);
 
       if (dbError) {
         mostrar(
-          '⚠️ Invitación enviada (ID: ' + userId + ') pero FALLÓ el registro en la tabla terapeutas:\n' + dbError.message,
+          '⚠️ Registrado en Auth (ID: ' + userId + ') pero FALLÓ la tabla terapeutas:\n' + dbError.message,
           'error'
         );
         btn.disabled = false;
-        btn.textContent = 'Enviar Invitación por Correo';
+        btn.textContent = 'Dar de Alta Terapeuta';
         return;
       }
 
-      // 3. Éxito
+      // 3. Éxito absoluto
       document.getElementById('email').value  = '';
-      mostrar('✅ Invitación enviada con éxito.\nSupabase envió el correo a: ' + email + '\nEl terapeuta podrá activar su cuenta usando el código recibido en la pantalla crear-clave.html', 'exito');
+      mostrar('✅ ¡Terapeuta registrado con éxito total!\n\nDale esta contraseña temporal para que ingrese a cambiarla:\n🔑 ' + password, 'exito');
       btn.disabled = false;
-      btn.textContent = 'Enviar Invitación por Correo';
+      btn.textContent = 'Dar de Alta Terapeuta';
     }
   </script>
 </body>
