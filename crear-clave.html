@@ -104,7 +104,7 @@
 <body>
   <div class="container">
     <div id="bloqueCarga">
-      🔄 Validando tu invitación segura... Por favor, esperá un momento.
+      🔄 Validando tu invitation segura... Por favor, esperá un momento.
     </div>
 
     <div id="formularioClave">
@@ -136,7 +136,7 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqZHhpd2xlZGdzeGdsdmhlamJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzExNzMsImV4cCI6MjA1ODcxMTE3M30.13V8iunhJbU3lXn9pL5E5R3_6B7X0BqR2_wM3_6B7X0'; 
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true }
+      auth: { persistSession: false } // <-- Cambiado a false para que no guarde sesiones basura
     });
 
     function mostrar(msg, tipo) {
@@ -158,12 +158,10 @@
 
     // CONTROL AUTOMÁTICO AL ENTRAR DESDE EL ENLACE
     window.addEventListener('DOMContentLoaded', async () => {
-      // Dejamos pasar un segundo para que Supabase procese el enlace de la URL de forma segura
       setTimeout(async () => {
         const { data } = await sb.auth.getSession();
         
         if (data && data.session) {
-          // Si detectó el enlace con éxito, ocultamos el cartel de carga y abrimos el formulario con los ojitos
           document.getElementById('bloqueCarga').style.display = 'none';
           document.getElementById('formularioClave').style.display = 'block';
         } else {
@@ -192,7 +190,6 @@
       btn.disabled = true;
       btn.textContent = 'Guardando…';
 
-      // Actualizamos la clave usando la sesión que el enlace activó automáticamente
       const { error } = await sb.auth.updateUser({ password: nuevaClave });
 
       if (error) {
