@@ -177,7 +177,6 @@
       // 2. Insertar en tabla terapeutas registrando su estado inicial
       const { error: dbError } = await sb
         .from('terapeutas')
-        .from('terapeutas')
         .insert([{
           id:             userId,
           email:          email,
