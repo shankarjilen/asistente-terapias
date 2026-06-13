@@ -150,10 +150,10 @@
 
       const sb = window.supabase.createClient(SUPABASE_URL, serviceKey);
 
-      // Dirección exacta donde queremos recibir al terapeuta al hacer clic en el mail
+      // Dirección exacta de la pantalla de activación
       const redirigirA = 'https://desarrollo--bucolic-torte-9aa5bb.netlify.app/crear-clave.html';
 
-      // 1. Enviar correo de invitación oficial usando la API de Administración
+      // 1. Enviar correo de invitación oficial
       const { data: authData, error: authError } = await sb.auth.admin.inviteUserByEmail(email, {
         redirectTo: redirigirA
       });
@@ -174,8 +174,9 @@
         return;
       }
 
-      // 2. Insertar en tabla terapeutas dejando el código temporal vacío o con estado pendiente
+      // 2. Insertar en tabla terapeutas registrando su estado inicial
       const { error: dbError } = await sb
+        .from('terapeutas')
         .from('terapeutas')
         .insert([{
           id:             userId,
@@ -196,7 +197,7 @@
 
       // 3. Éxito
       document.getElementById('email').value  = '';
-      mostrar('✅ Invitación enviada con éxito.\nSupabase envió el correo a: ' + email + '\nSe abrirá directo en crear-clave.html', 'exito');
+      mostrar('✅ Invitación enviada con éxito.\nSupabase envió el correo a: ' + email + '\nEl terapeuta podrá activar su cuenta usando el código recibido en la pantalla crear-clave.html', 'exito');
       btn.disabled = false;
       btn.textContent = 'Enviar Invitación por Correo';
     }
