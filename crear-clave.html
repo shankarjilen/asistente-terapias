@@ -90,8 +90,10 @@
   <script>
     const SUPABASE_URL = 'https://ejdxiwledgsxglvhejba.supabase.co';
 
-    // Capturamos automáticamente la sesión que Supabase manda en el enlace del correo
-    const sb = window.supabase.createClient(SUPABASE_URL, '');
+    // Inicializamos Supabase permitiendo que procese de forma limpia los tokens de autenticación
+    const sb = window.supabase.createClient(SUPABASE_URL, '', {
+      auth: { persistSession: false }
+    });
 
     function mostrar(msg, tipo) {
       const el = document.getElementById('mensaje');
@@ -118,7 +120,7 @@
       btn.disabled = true;
       btn.textContent = 'Guardando…';
 
-      // Actualiza la contraseña usando la sesión activa del correo
+      // Actualiza la contraseña del usuario aprovechando la sesión activa del enlace
       const { error } = await sb.auth.updateUser({ password: nuevaClave });
 
       if (error) {
@@ -131,6 +133,7 @@
       mostrar('✅ ¡Contraseña guardada con éxito! Redirigiendo a la aplicación...', 'exito');
 
       setTimeout(() => {
+        // Redirige al login principal una vez cambiada la clave
         window.location.href = "index.html";
       }, 2000);
     }

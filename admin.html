@@ -146,32 +146,42 @@
       }
 
       btn.disabled = true;
-      btn.textContent = 'Enviando invitación…';
+      btn.textContent = 'Procesando…';
 
       const sb = window.supabase.createClient(SUPABASE_URL, serviceKey);
 
-      // Enviar correo de invitación usando la API administrativa de Supabase
-      const { data: inviteData, error: inviteError } = await sb.auth.admin.inviteUserByEmail(email, {
-        redirectTo: 'https://shankarjilen.github.io/asistente-terapias/crear-clave.html'
+      // Dirección exacta donde queremos recibir al terapeuta al hacer clic en el mail
+      const redirigirA = 'https://desarrollo--bucolic-torte-9aa5bb.netlify.app/crear-clave.html';
+
+      // 1. Enviar correo de invitación oficial usando la API de Administración
+      const { data: authData, error: authError } = await sb.auth.admin.inviteUserByEmail(email, {
+        redirectTo: redirigirA
       });
 
-      if (inviteError) {
-        mostrar('❌ Error al enviar invitación:\n' + inviteError.message, 'error');
+      if (authError) {
+        mostrar('❌ Error al enviar invitación:\n' + authError.message, 'error');
         btn.disabled = false;
         btn.textContent = 'Enviar Invitación por Correo';
         return;
       }
 
-      const userId = inviteData?.user?.id;
+      const userId = authData?.user?.id;
 
-      // Insertar en la tabla terapeutas dejando el código temporal en blanco o con aviso
+      if (!userId) {
+        mostrar('❌ No se obtuvo el ID del usuario invitado.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Enviar Invitación por Correo';
+        return;
+      }
+
+      // 2. Insertar en tabla terapeutas dejando el código temporal vacío o con estado pendiente
       const { error: dbError } = await sb
         .from('terapeutas')
         .insert([{
           id:             userId,
           email:          email,
           codigo:         'PENDIENTE',
-          password_plano: 'CREANDOSE'
+          password_plano: 'Establecido por el usuario'
         }]);
 
       if (dbError) {
@@ -184,8 +194,9 @@
         return;
       }
 
+      // 3. Éxito
       document.getElementById('email').value  = '';
-      mostrar('✅ Invitación enviada correctamente al correo:\n' + email + '\n\nEl terapeuta deberá crear su contraseña desde el enlace recibido.', 'exito');
+      mostrar('✅ Invitación enviada con éxito.\nSupabase envió el correo a: ' + email + '\nSe abrirá directo en crear-clave.html', 'exito');
       btn.disabled = false;
       btn.textContent = 'Enviar Invitación por Correo';
     }
