@@ -91,34 +91,42 @@
     }
     .exito { background: #c6f6d5; color: #276749; display: block !important; }
     .error { background: #fed7d7; color: #9b2c2c; display: block !important; }
+    #bloqueCarga {
+      text-align: center;
+      color: #4a5568;
+      font-weight: 600;
+    }
+    #formularioClave {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Activa tu Cuenta</h1>
-    <p style="font-size:0.9rem; color:#718096; margin-bottom:20px; text-align:center;">
-      Ingresá el código enviado a tu correo junto con tu nueva clave de acceso.
-    </p>
-
-    <label for="correoTerapeuta">Tu Correo Electrónico</label>
-    <input type="email" id="correoTerapeuta" placeholder="ejemplo@correo.com" />
-
-    <label for="codigoVerificacion">Código de Verificación (6 dígitos)</label>
-    <input type="text" id="codigoVerificacion" placeholder="000000" maxlength="6" style="text-align: center; font-weight: bold; letter-spacing: 4px;" />
-
-    <label for="nuevaClave">Nueva Contraseña</label>
-    <div class="input-wrapper">
-      <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
-      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('nuevaClave', this)">👁️</button>
+    <div id="bloqueCarga">
+      🔄 Validando tu invitación segura... Por favor, esperá un momento.
     </div>
 
-    <label for="confirmarClave">Confirmar Contraseña</label>
-    <div class="input-wrapper">
-      <input type="password" id="confirmarClave" placeholder="Repetí tu contraseña" />
-      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('confirmarClave', this)">👁️</button>
-    </div>
+    <div id="formularioClave">
+      <h1>Crea tu Contraseña</h1>
+      <p style="font-size:0.9rem; color:#718096; margin-bottom:20px; text-align:center;">
+        Ingresá la clave que usarás para acceder a tu cuenta.
+      </p>
 
-    <button id="btnGuardar" onclick="activarYGuardar()">Activar y Guardar Contraseña</button>
+      <label for="nuevaClave">Nueva Contraseña</label>
+      <div class="input-wrapper">
+        <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
+        <button type="button" class="ojo-btn" onclick="alternarVisibilidad('nuevaClave', this)">👁️</button>
+      </div>
+
+      <label for="confirmarClave">Confirmar Contraseña</label>
+      <div class="input-wrapper">
+        <input type="password" id="confirmarClave" placeholder="Repetí tu contraseña" />
+        <button type="button" class="ojo-btn" onclick="alternarVisibilidad('confirmarClave', this)">👁️</button>
+      </div>
+
+      <button id="btnGuardar" onclick="guardarClave()">Guardar Contraseña</button>
+    </div>
 
     <div id="mensaje"></div>
   </div>
@@ -128,7 +136,7 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqZHhpd2xlZGdzeGdsdmhlamJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzExNzMsImV4cCI6MjA1ODcxMTE3M30.13V8iunhJbU3lXn9pL5E5R3_6B7X0BqR2_wM3_6B7X0'; 
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false }
+      auth: { persistSession: true }
     });
 
     function mostrar(msg, tipo) {
@@ -148,23 +156,30 @@
       }
     }
 
-    async function activarYGuardar() {
-      const email = document.getElementById('correoTerapeuta').value.trim();
-      const token = document.getElementById('codigoVerificacion').value.trim();
+    // CONTROL AUTOMÁTICO AL ENTRAR DESDE EL ENLACE
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Dejamos pasar un segundo para que Supabase procese el enlace de la URL de forma segura
+      setTimeout(async () => {
+        const { data } = await sb.auth.getSession();
+        
+        if (data && data.session) {
+          // Si detectó el enlace con éxito, ocultamos el cartel de carga y abrimos el formulario con los ojitos
+          document.getElementById('bloqueCarga').style.display = 'none';
+          document.getElementById('formularioClave').style.display = 'block';
+        } else {
+          document.getElementById('bloqueCarga').style.display = 'none';
+          mostrar('⚠️ El enlace de invitación expiró, ya fue usado o no es válido. Solicitá una nueva invitación.', 'error');
+        }
+      }, 1500);
+    });
+
+    async function guardarClave() {
       const nuevaClave = document.getElementById('nuevaClave').value.trim();
       const confirmarClave = document.getElementById('confirmarClave').value.trim();
       const btn = document.getElementById('btnGuardar');
 
       mostrar('', '');
 
-      if (!email || !token) {
-        mostrar('⚠️ Por favor, completá tu correo y el código de 6 dígitos.', 'error');
-        return;
-      }
-      if (token.length < 6) {
-        mostrar('⚠️ El código de verificación debe tener 6 dígitos.', 'error');
-        return;
-      }
       if (nuevaClave.length < 6) {
         mostrar('⚠️ La contraseña debe tener al menos 6 caracteres.', 'error');
         return;
@@ -175,37 +190,23 @@
       }
 
       btn.disabled = true;
-      btn.textContent = 'Verificando y Guardando…';
+      btn.textContent = 'Guardando…';
 
-      // PASO 1: Iniciar sesión de forma segura usando el código de 6 dígitos (OTP)
-      const { data: authData, error: authError } = await sb.auth.verifyOtp({
-        email: email,
-        token: token,
-        type: 'invite'
-      });
+      // Actualizamos la clave usando la sesión que el enlace activó automáticamente
+      const { error } = await sb.auth.updateUser({ password: nuevaClave });
 
-      if (authError) {
-        mostrar('❌ Código incorrecto, vencido o correo no válido.', 'error');
+      if (error) {
+        mostrar('❌ Error al guardar contraseña: ' + error.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Activar y Guardar Contraseña';
+        btn.textContent = 'Guardar Contraseña';
         return;
       }
 
-      // PASO 2: Con la sesión ya activa y segura en este instante, guardamos la contraseña
-      const { error: updateError } = await sb.auth.updateUser({ password: nuevaClave });
-
-      if (updateError) {
-        mostrar('❌ Error al registrar la contraseña: ' + updateError.message, 'error');
-        btn.disabled = false;
-        btn.textContent = 'Activar y Guardar Contraseña';
-        return;
-      }
-
-      mostrar('✅ ¡Cuenta activada y contraseña guardada con éxito! Redirigiendo...', 'exito');
+      mostrar('✅ ¡Contraseña guardada con éxito! Redirigiendo a la aplicación...', 'exito');
 
       setTimeout(() => {
         window.location.href = "index.html";
-      }, 2500);
+      }, 2000);
     }
   </script>
 </body>
