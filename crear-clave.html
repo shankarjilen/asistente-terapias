@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Actualizar Mi Contraseña</title>
+  <title>Crear Contraseña</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,14 +20,21 @@
       border-radius: 16px;
       padding: 40px 36px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.10);
     }
     h1 {
       font-size: 1.4rem;
       color: #2d3748;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       text-align: center;
+    }
+    .subtitulo {
+      font-size: 0.88rem;
+      color: #718096;
+      text-align: center;
+      margin-bottom: 28px;
+      line-height: 1.5;
     }
     label {
       display: block;
@@ -36,37 +43,37 @@
       margin-bottom: 6px;
       font-weight: 600;
     }
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+      margin-bottom: 20px;
+    }
     input {
       width: 100%;
-      padding: 11px 14px;
+      padding: 11px 45px 11px 14px;
       border: 1.5px solid #cbd5e0;
       border-radius: 8px;
       font-size: 1rem;
       color: #2d3748;
-      margin-bottom: 20px;
       outline: none;
+      transition: border-color 0.2s;
     }
-    .input-wrapper {
-      position: relative;
-      width: 100%;
-    }
-    .input-wrapper input {
-      padding-right: 45px;
-    }
+    input:focus { border-color: #7eb09e; }
     .ojo-btn {
       position: absolute;
       right: 12px;
-      top: 12px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
       color: #a0aec0;
       cursor: pointer;
       font-size: 1.1rem;
-      width: auto;
       padding: 0;
+      width: auto;
     }
     .ojo-btn:hover { color: #4a5568; background: none; }
-    button {
+    button.principal {
       width: 100%;
       padding: 14px;
       background: #7eb09e;
@@ -76,133 +83,190 @@
       font-size: 1.05rem;
       font-weight: 700;
       cursor: pointer;
+      transition: background 0.2s;
     }
-    button:hover { background: #5e9484; }
-    button:disabled { background: #cbd5e0; cursor: not-allowed; }
+    button.principal:hover { background: #5e9484; }
+    button.principal:disabled { background: #a0aec0; cursor: not-allowed; }
     #mensaje {
       margin-top: 22px;
-      padding: 13px 16px;
-      border-radius: 8px;
+      padding: 18px 20px;
+      border-radius: 10px;
       font-size: 0.95rem;
       display: none;
+      line-height: 1.6;
     }
-    .exito { background: #c6f6d5; color: #276749; display: block !important; }
-    .error { background: #fed7d7; color: #9b2c2c; display: block !important; }
+    .exito {
+      background: #f0fff4;
+      border: 1.5px solid #9ae6b4;
+      color: #276749;
+      display: block !important;
+    }
+    .error {
+      background: #fed7d7;
+      color: #9b2c2c;
+      display: block !important;
+    }
+    .exito-titulo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .exito-aviso {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #92400e;
+      margin: 14px 0;
+      line-height: 1.5;
+    }
+    .btn-app {
+      display: inline-block;
+      margin-top: 14px;
+      width: 100%;
+      padding: 13px;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-app:hover { background: #5a67d8; }
+    #pantallaError {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+    #pantallaError p {
+      color: #9b2c2c;
+      background: #fed7d7;
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Actualizá tu Contraseña</h1>
-    <p style="font-size:0.9rem; color:#718096; margin-bottom:20px; text-align:center;">
-      Ingresá tus datos para cambiar la clave temporal por una tuya personal.
-    </p>
+    <h1>Crear tu Contraseña</h1>
+    <p class="subtitulo">Ingresá y confirmá tu nueva contraseña personal para acceder a la aplicación.</p>
 
-    <label for="email">Tu Correo Electrónico</label>
-    <input type="email" id="email" placeholder="terapeuta@ejemplo.com" />
+    <div id="formulario">
+      <label for="nuevaClave">Nueva Contraseña</label>
+      <div class="input-wrapper">
+        <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
+        <button type="button" class="ojo-btn" onclick="alternarVisibilidad('nuevaClave', this)">👁️</button>
+      </div>
 
-    <label for="claveTemporal">Contraseña Temporal Actual</label>
-    <div class="input-wrapper">
-      <input type="password" id="claveTemporal" placeholder="La clave que te dio el administrador" />
-      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('claveTemporal', this)">👁️</button>
+      <label for="confirmarClave">Confirmar Contraseña</label>
+      <div class="input-wrapper">
+        <input type="password" id="confirmarClave" placeholder="Repetí tu nueva contraseña" />
+        <button type="button" class="ojo-btn" onclick="alternarVisibilidad('confirmarClave', this)">👁️</button>
+      </div>
+
+      <button class="principal" id="btnGuardar" onclick="actualizarClave()">Guardar Contraseña</button>
     </div>
 
-    <hr style="border:none; border-top:1.5px dashed #e2e8f0; margin-bottom:20px;">
-
-    <label for="nuevaClave">Nueva Contraseña Personal</label>
-    <div class="input-wrapper">
-      <input type="password" id="nuevaClave" placeholder="Mínimo 6 caracteres" />
-      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('nuevaClave', this)">👁️</button>
+    <div id="pantallaError">
+      <p>⚠️ El enlace de acceso no es válido o ha expirado.<br><br>Contactá al administrador para recibir un nuevo enlace.</p>
     </div>
 
-    <label for="confirmarClave">Confirmar Nueva Contraseña</label>
-    <div class="input-wrapper">
-      <input type="password" id="confirmarClave" placeholder="Repetí tu nueva contraseña" />
-      <button type="button" class="ojo-btn" onclick="alternarVisibilidad('confirmarClave', this)">👁️</button>
-    </div>
-
-    <button id="btnGuardar" onclick="actualizarClave()">Actualizar Contraseña</button>
     <div id="mensaje"></div>
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://ejdxiwledgsxglvhejba.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqZHhpd2xlZGdzeGdsdmhlamJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzExNzMsImV4cCI6MjA1ODcxMTE3M30.13V8iunhJbU3lXn9pL5E5R3_6B7X0BqR2_wM3_6B7X0'; 
+    const SUPABASE_URL      = 'https://ejdxiwledgsxglvhejba.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqZHhpd2xlZGdzeGdsdmhlamJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMzExNzMsImV4cCI6MjA1ODcxMTE3M30.13V8iunhJbU3lXn9pL5E5R3_6B7X0BqR2_wM3_6B7X0';
+    const APP_URL           = 'https://desarrollo--bucolic-torte-9aa5bb.netlify.app/index.html';
 
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false }
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Verificar sesión activa al cargar (viene del magic link)
+    window.addEventListener('load', async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        document.getElementById('formulario').style.display = 'none';
+        document.getElementById('pantallaError').style.display = 'block';
+      }
     });
 
     function mostrar(msg, tipo) {
       const el = document.getElementById('mensaje');
-      el.textContent = msg;
+      el.innerHTML = msg;
       el.className = tipo;
     }
 
     function alternarVisibilidad(idCampo, boton) {
       const campo = document.getElementById(idCampo);
-      campo.type = campo.type === "password" ? "text" : "password";
-      boton.textContent = campo.type === "text" ? "🙈" : "👁️";
+      campo.type = campo.type === 'password' ? 'text' : 'password';
+      boton.textContent = campo.type === 'text' ? '🙈' : '👁️';
     }
 
     async function actualizarClave() {
-      const email = document.getElementById('email').value.trim();
-      const claveTemporal = document.getElementById('claveTemporal').value.trim();
-      const nuevaClave = document.getElementById('nuevaClave').value.trim();
+      const nuevaClave    = document.getElementById('nuevaClave').value.trim();
       const confirmarClave = document.getElementById('confirmarClave').value.trim();
-      const btn = document.getElementById('btnGuardar');
+      const btn           = document.getElementById('btnGuardar');
 
       mostrar('', '');
 
-      if (!email || !claveTemporal || !nuevaClave || !confirmarClave) {
-        mostrar('⚠️ Por favor completá todos los campos.', 'error');
+      if (!nuevaClave || !confirmarClave) {
+        mostrar('⚠️ Por favor completá ambos campos.', 'error');
         return;
       }
       if (nuevaClave.length < 6) {
-        mostrar('⚠️ La nueva contraseña debe tener al menos 6 caracteres.', 'error');
+        mostrar('⚠️ La contraseña debe tener al menos 6 caracteres.', 'error');
         return;
       }
       if (nuevaClave !== confirmarClave) {
-        mostrar('⚠️ Las nuevas contraseñas no coinciden.', 'error');
+        mostrar('⚠️ Las contraseñas no coinciden.', 'error');
         return;
       }
 
       btn.disabled = true;
-      btn.textContent = 'Procesando…';
+      btn.textContent = 'Guardando…';
 
-      // 1. Buscamos primero en la tabla terapeutas si el mail y la clave temporal coinciden
-      const { data: terapeuta, error: dbError } = await sb
-        .from('terapeutas')
-        .select('id')
-        .eq('email', email)
-        .eq('password_plano', claveTemporal)
-        .maybeSingle();
+      const { data: { session } } = await sb.auth.getSession();
 
-      if (dbError || !terapeuta) {
-        mostrar('❌ La contraseña temporal o el correo son incorrectos.', 'error');
+      if (!session) {
+        mostrar('⚠️ Tu sesión expiró. Solicitá un nuevo enlace al administrador.', 'error');
         btn.disabled = false;
-        btn.textContent = 'Actualizar Contraseña';
+        btn.textContent = 'Guardar Contraseña';
         return;
       }
 
-      // 2. Iniciamos sesión usando un método directo de actualización por restablecimiento clásico
-      const { error: authError } = await sb.auth.signInWithPassword({
-        email: email,
-        password: claveTemporal
-      });
-
-      // Si da el error de validación, forzamos la actualización directa del usuario activo
+      // Actualizar contraseña en Auth
       const { error: updateError } = await sb.auth.updateUser({ password: nuevaClave });
 
-      // 3. Modificar la tabla terapeutas para reflejar el éxito
+      if (updateError) {
+        mostrar('❌ Error al actualizar la contraseña:\n' + updateError.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Guardar Contraseña';
+        return;
+      }
+
+      // Actualizar campo codigo en tabla terapeutas
       await sb.from('terapeutas')
-        .update({ password_plano: 'Actualizada por usuario' })
-        .eq('email', email);
+        .update({ codigo: 'ACTIVO' })
+        .eq('email', session.user.email);
 
-      mostrar('✅ ¡Contraseña actualizada con éxito! Redirigiendo...', 'exito');
-
-      setTimeout(() => {
-        window.location.href = "index.html";
-      }, 2000);
+      // Ocultar formulario y mostrar mensaje de éxito
+      document.getElementById('formulario').style.display = 'none';
+      mostrar(`
+        <div class="exito-titulo">✅ ¡Contraseña creada con éxito!</div>
+        <p>Tu acceso está listo. Ya podés ingresar a la aplicación con tu correo y tu nueva contraseña.</p>
+        <div class="exito-aviso">
+          📌 <strong>Importante:</strong> Guardá este enlace en tus favoritos para acceder siempre a la aplicación:<br><br>
+          <strong>${APP_URL}</strong>
+        </div>
+        <a class="btn-app" href="${APP_URL}">Ir a la Aplicación →</a>
+      `, 'exito');
     }
   </script>
 </body>
