@@ -72,11 +72,18 @@
       font-weight: 700;
       cursor: pointer;
       transition: background 0.2s;
+      margin-bottom: 12px;
     }
     button:hover { background: #5e9484; }
     button:disabled { background: #a0aec0; cursor: not-allowed; }
+    #btnEnviarAcceso {
+      background: #667eea;
+      display: none;
+    }
+    #btnEnviarAcceso:hover { background: #5a67d8; }
+    #btnEnviarAcceso:disabled { background: #a0aec0; }
     #mensaje {
-      margin-top: 22px;
+      margin-top: 10px;
       padding: 13px 16px;
       border-radius: 8px;
       font-size: 0.95rem;
@@ -115,10 +122,8 @@
     <label for="email">Email del Terapeuta</label>
     <input type="email" id="email" placeholder="terapeuta@ejemplo.com" />
 
-    <label for="codigo">Código / Contraseña <span style="color:#a0aec0;font-weight:400">(máx. 6 caracteres)</span></label>
-    <input type="text" id="codigo" placeholder="ABC123" maxlength="6" />
-
-    <button id="btnRegistrar" onclick="registrar()">Registrar Terapeuta</button>
+    <button id="btnRegistrar" onclick="registrarTerapeuta()">Dar de Alta Terapeuta</button>
+    <button id="btnEnviarAcceso" onclick="enviarMagicLink()">📨 Enviar Acceso al Terapeuta</button>
 
     <div id="mensaje"></div>
   </div>
@@ -126,104 +131,111 @@
   <script>
     const SUPABASE_URL = 'https://ejdxiwledgsxglvhejba.supabase.co';
 
+    // URL de tu app crear-clave.html en Netlify rama desarrollo
+    const REDIRECT_URL = 'https://desarrollo--bucolic-torte-9aa5bb.netlify.app/crear-clave.html';
+
+    let sbAdmin = null;
+    let emailRegistrado = '';
+
     function mostrar(msg, tipo) {
       const el = document.getElementById('mensaje');
       el.textContent = msg;
       el.className = tipo;
     }
 
-    async function registrar() {
+    async function registrarTerapeuta() {
       const serviceKey = document.getElementById('serviceKey').value.trim();
       const email      = document.getElementById('email').value.trim();
-      const codigo     = document.getElementById('codigo').value.trim();
       const btn        = document.getElementById('btnRegistrar');
 
       mostrar('', '');
+      document.getElementById('btnEnviarAcceso').style.display = 'none';
 
       if (!serviceKey) {
         mostrar('⚠️ Pegá la Service Role Key antes de continuar.', 'error');
         return;
       }
-      if (!email || !codigo) {
-        mostrar('⚠️ Completá el email y el código.', 'error');
+      if (!email) {
+        mostrar('⚠️ Completá el email del terapeuta.', 'error');
         return;
       }
 
       btn.disabled = true;
       btn.textContent = 'Procesando…';
 
-      const sb = window.supabase.createClient(SUPABASE_URL, serviceKey);
+      sbAdmin = window.supabase.createClient(SUPABASE_URL, serviceKey);
 
-// NUEVO CONTROL: Verificar si el código ya existe en la tabla terapeutas
-      const { data: codigoExiste, error: checkError } = await sb
-        .from('terapeutas')
-        .select('codigo')
-        .eq('codigo', codigo)
-        .maybeSingle();
-
-      if (checkError) {
-        mostrar('❌ Error al verificar el código:\n' + checkError.message, 'error');
-        btn.disabled = false;
-        btn.textContent = 'Registrar Terapeuta';
-        return;
-      }
-
-      if (codigoExiste) {
-        mostrar('⚠️ El código "' + codigo + '" ya está asignado a otro terapeuta. Elegí uno diferente.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Registrar Terapeuta';
-        return;
-      }
-
-      // 1. Crear usuario en Auth
-      const { data: authData, error: authError } = await sb.auth.admin.createUser({
-        email,
-        password: codigo,
+      // 1. Crear usuario en Auth (sin contraseña — usará magic link)
+      const { data: authData, error: authError } = await sbAdmin.auth.admin.createUser({
+        email: email,
         email_confirm: true
       });
 
       if (authError) {
-        mostrar('❌ Error en autenticación:\n' + authError.message, 'error');
+        mostrar('❌ Error al dar de alta en Auth:\n' + authError.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Registrar Terapeuta';
+        btn.textContent = 'Dar de Alta Terapeuta';
         return;
       }
 
       const userId = authData?.user?.id;
 
-      if (!userId) {
-        mostrar('❌ No se obtuvo el ID del usuario.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Registrar Terapeuta';
-        return;
-      }
-
       // 2. Insertar en tabla terapeutas
-      const { error: dbError } = await sb
+      const { error: dbError } = await sbAdmin
         .from('terapeutas')
         .insert([{
-          id:             userId,
-          email:          email,
-          codigo:         codigo,
-          password_plano: codigo
+          id:     userId,
+          email:  email,
+          codigo: 'PENDIENTE'
         }]);
 
       if (dbError) {
         mostrar(
-          '⚠️ Usuario creado en Auth (ID: ' + userId + ') pero FALLÓ la inserción en terapeutas:\n' + dbError.message,
+          '⚠️ Registrado en Auth (ID: ' + userId + ') pero FALLÓ la tabla terapeutas:\n' + dbError.message,
           'error'
         );
         btn.disabled = false;
-        btn.textContent = 'Registrar Terapeuta';
+        btn.textContent = 'Dar de Alta Terapeuta';
         return;
       }
 
-      // 3. Éxito
-      document.getElementById('email').value  = '';
-      document.getElementById('codigo').value = '';
-      mostrar('✅ Terapeuta registrado correctamente.\nEmail: ' + email, 'exito');
+      // 3. Éxito — mostrar botón de envío
+      emailRegistrado = email;
+      document.getElementById('email').value = '';
+      document.getElementById('btnEnviarAcceso').style.display = 'block';
+      mostrar('✅ Terapeuta registrado.\nAhora podés enviarle el acceso con el botón de abajo.', 'exito');
       btn.disabled = false;
-      btn.textContent = 'Registrar Terapeuta';
+      btn.textContent = 'Dar de Alta Terapeuta';
+    }
+
+    async function enviarMagicLink() {
+      const btn = document.getElementById('btnEnviarAcceso');
+
+      if (!sbAdmin || !emailRegistrado) {
+        mostrar('⚠️ Primero registrá al terapeuta.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+
+      const { error } = await sbAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: emailRegistrado,
+        options: { redirectTo: REDIRECT_URL }
+      });
+
+      if (error) {
+        mostrar('❌ Error al enviar el acceso:\n' + error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '📨 Enviar Acceso al Terapeuta';
+        return;
+      }
+
+      mostrar('📨 ¡Acceso enviado a ' + emailRegistrado + '!\nEl terapeuta recibirá un enlace para crear su contraseña.', 'exito');
+      btn.disabled = true;
+      btn.textContent = '✅ Acceso Enviado';
+      emailRegistrado = '';
     }
   </script>
 </body>
