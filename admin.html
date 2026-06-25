@@ -237,14 +237,15 @@
 
       const userId = authData?.user?.id;
 
-      // 2. Insertar en tabla terapeutas
+      // 2. Insertar en tabla terapeutas (user_uid vincula al RLS)
       const { error: dbError } = await sbAdmin
         .from('terapeutas')
         .insert([{
-          id:              userId,
-          email:           email,
-          codigo:          codigo,
-          password_plano:  codigo
+          id:             userId,
+          user_uid:       userId,   // ← necesario para que funcione el RLS
+          email:          email,
+          codigo:         codigo,
+          password_plano: codigo
         }]);
 
       if (dbError) {
